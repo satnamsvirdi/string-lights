@@ -1389,18 +1389,33 @@ function dimBaseMaterial(doc, parent, light, options) {
 
 // src/core/dimensions.js
 function dimensions({ page, options, win, host, doc }) {
-  if (!page) return [host.clientWidth, host.clientHeight];
+  if (!page) {
+    const scrolls = /^(auto|scroll)$/.test(win.getComputedStyle(host).overflowY);
+    if (!scrolls) return [host.clientWidth, host.clientHeight];
+    const height2 = withoutOverlays(
+      host.querySelectorAll(":scope > svg[data-string]"),
+      () => Math.max(host.clientHeight, host.scrollHeight)
+    );
+    return [host.clientWidth, height2];
+  }
   if (options.pagePosition === "fixed") return [win.innerWidth, win.innerHeight];
-  const overlays = [...doc.querySelectorAll('svg[data-string-page="absolute"]')];
+  const height = withoutOverlays(
+    doc.querySelectorAll('svg[data-string-page="absolute"]'),
+    () => Math.max(win.innerHeight, doc.documentElement.scrollHeight, doc.body.scrollHeight)
+  );
+  return [doc.documentElement.clientWidth || win.innerWidth, height];
+}
+function withoutOverlays(nodes, measure) {
+  const overlays = [...nodes];
   const previous = overlays.map((overlay) => overlay.style.height);
   overlays.forEach((overlay) => {
     overlay.style.height = "0px";
   });
-  const height = Math.max(win.innerHeight, doc.documentElement.scrollHeight, doc.body.scrollHeight);
+  const height = measure();
   overlays.forEach((overlay, i) => {
     overlay.style.height = previous[i];
   });
-  return [doc.documentElement.clientWidth || win.innerWidth, height];
+  return height;
 }
 
 // src/core/renderer.js
@@ -1411,6 +1426,7 @@ function renderScene(state) {
   state.bulbs = [];
   if (page) svg.dataset.stringPage = options.pagePosition;
   const [w, h] = dimensions(state);
+  if (!page) svg.style.height = `${h}px`;
   if (page)
     Object.assign(svg.style, {
       position: options.pagePosition,
@@ -1607,6 +1623,7 @@ function createStringLights(target, input = {}) {
   }
   const observer = typeof win.ResizeObserver === "function" ? new win.ResizeObserver(resize) : null;
   observer?.observe(host);
+  if (!page) host.addEventListener("scroll", resize, { passive: true });
   if (page) observer?.observe(doc.documentElement);
   const visibility = !page && typeof win.IntersectionObserver === "function" ? new win.IntersectionObserver(
     (entries) => {
@@ -1633,6 +1650,7 @@ function createStringLights(target, input = {}) {
     motion.stop();
     win.cancelAnimationFrame(resizeFrame);
     observer?.disconnect();
+    if (!page) host.removeEventListener("scroll", resize);
     visibility?.disconnect();
     if (needsWindowResize) win.removeEventListener("resize", resize);
     media.removeEventListener("change", render);

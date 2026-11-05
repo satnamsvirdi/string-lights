@@ -10,6 +10,7 @@ export function renderScene(state) {
   state.bulbs = [];
   if (page) svg.dataset.stringPage = options.pagePosition;
   const [w, h] = dimensions(state);
+  if (!page) svg.style.height = `${h}px`;
   if (page)
     Object.assign(svg.style, {
       position: options.pagePosition,

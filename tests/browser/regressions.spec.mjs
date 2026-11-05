@@ -1,5 +1,41 @@
 import { test, expect } from '@playwright/test';
 
+test('scroll containers keep their lights through the middle and bottom of the content', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const host = document.getElementById('host');
+    Object.assign(host.style, { height: '300px', overflow: 'auto' });
+    const content = document.createElement('div');
+    content.id = 'scroll-content';
+    content.style.height = '1200px';
+    host.append(content);
+    const { createStringLights } = await import('/core.js');
+    window.lights = createStringLights(host, { layout: 'border', animated: false, breeze: false });
+    host.scrollTop = 450;
+  });
+  expect(await page.evaluate(() => lights.element.viewBox.baseVal.height)).toBeGreaterThanOrEqual(
+    1200,
+  );
+  expect(
+    await page.evaluate(() =>
+      [...lights.element.querySelectorAll('[data-shape]')].some((bulb) => {
+        const box = bulb.getBoundingClientRect();
+        const host = document.getElementById('host').getBoundingClientRect();
+        return box.top >= host.top && box.bottom <= host.bottom;
+      }),
+    ),
+  ).toBe(true);
+  await page.evaluate(() => {
+    document.getElementById('scroll-content').style.height = '600px';
+    document.getElementById('host').scrollTop = 200;
+  });
+  await expect
+    .poll(() => page.evaluate(() => lights.element.viewBox.baseVal.height))
+    .toBeLessThan(1200);
+});
+
 test('scrolling page overlays align with the document even when the body has margins and padding', async ({
   page,
 }) => {

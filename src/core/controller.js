@@ -135,6 +135,7 @@ export function createStringLights(target, input = {}) {
   }
   const observer = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(resize) : null;
   observer?.observe(host);
+  if (!page) host.addEventListener('scroll', resize, { passive: true });
   if (page) observer?.observe(doc.documentElement);
   const visibility =
     !page && typeof win.IntersectionObserver === 'function'
@@ -165,6 +166,7 @@ export function createStringLights(target, input = {}) {
     motion.stop();
     win.cancelAnimationFrame(resizeFrame);
     observer?.disconnect();
+    if (!page) host.removeEventListener('scroll', resize);
     visibility?.disconnect();
     if (needsWindowResize) win.removeEventListener('resize', resize);
     media.removeEventListener('change', render);
