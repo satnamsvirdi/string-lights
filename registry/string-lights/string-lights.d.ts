@@ -12,6 +12,8 @@ export interface StringOptions {
   spacing?: number;
   size?: number;
   sag?: number;
+  /** Number of evenly spaced top supports, 1–12. Default 0 preserves each layout's default count. */
+  anchorCount?: number;
   speed?: number;
   glow?: number;
   glitter?: boolean;

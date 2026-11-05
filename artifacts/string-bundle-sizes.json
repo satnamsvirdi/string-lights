@@ -1,15 +1,15 @@
 {
   "renderer": {
-    "minified": 31740,
-    "gzip": 12838
+    "minified": 31935,
+    "gzip": 12906
   },
   "geometry": {
-    "minified": 6452,
-    "gzip": 2883
+    "minified": 6647,
+    "gzip": 2958
   },
   "preview": {
-    "minified": 8693,
-    "gzip": 3492
+    "minified": 8874,
+    "gzip": 3565
   },
   "reactWrapper": {
     "minified": 714,

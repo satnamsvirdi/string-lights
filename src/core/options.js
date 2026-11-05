@@ -26,6 +26,7 @@ const defaults = /* @__PURE__ */ Object.freeze({
   spacing: 28,
   size: 1,
   sag: 48,
+  anchorCount: 0,
   speed: 1,
   glow: 0.65,
   glitter: false,
@@ -93,6 +94,8 @@ export function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError('seed must be finite.');
+  if (!Number.isInteger(o.anchorCount) || o.anchorCount < 0 || o.anchorCount > 12)
+    throw new TypeError('anchorCount must be an integer from 0 to 12 (0 uses the layout default).');
   for (const key of [
     'glitter',
     'dimBase',

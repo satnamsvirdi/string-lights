@@ -2,6 +2,7 @@
 
 ## 0.2.0
 
+- Add `anchorCount` to customize the number of top attachment points without changing sag; zero retains layout defaults.
 - Remove the held-pointer speed cap so a downward reversal follows the cursor immediately; retain cable reach limits and existing release dynamics.
 - Prevent small header pulls from whipping attached drops: track moving support history correctly and apply held damping only until the pointer releases.
 - Keep curtain drops tied to their header during drag, release, and breeze; move their pinned roots with the actual header attachment.

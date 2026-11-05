@@ -38,6 +38,7 @@ var defaults = /* @__PURE__ */ Object.freeze({
   spacing: 28,
   size: 1,
   sag: 48,
+  anchorCount: 0,
   speed: 1,
   glow: 0.65,
   glitter: false,
@@ -96,6 +97,8 @@ function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError("seed must be finite.");
+  if (!Number.isInteger(o.anchorCount) || o.anchorCount < 0 || o.anchorCount > 12)
+    throw new TypeError("anchorCount must be an integer from 0 to 12 (0 uses the layout default).");
   for (const key of [
     "glitter",
     "dimBase",
@@ -261,7 +264,7 @@ function createGeometry(width, height, input = {}) {
       distance += length;
     }
   };
-  const swag = (y, waves = 2, sag = o.sag) => {
+  const swag = (y, waves = o.anchorCount || 2, sag = o.sag) => {
     const span = width / waves, depth = Math.min(sag, height * 0.25);
     let lo = span / 40, hi = Math.max(span * span / Math.max(depth, 1e-3), span);
     for (let i = 0; i < 50; i++) {
@@ -285,9 +288,10 @@ function createGeometry(width, height, input = {}) {
     }
   };
   if (o.layout === "roofline") swag(12);
-  if (o.layout === "draped") for (let row = 0; row < 3; row++) swag(12 + row * 38, 3, o.sag * 0.65);
+  if (o.layout === "draped")
+    for (let row = 0; row < 3; row++) swag(12 + row * 38, o.anchorCount || 3, o.sag * 0.65);
   if (o.layout === "curtain") {
-    swag(12, 2, o.sag);
+    swag(12);
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
     for (let i = 0; i + 1 < headerBulbs.length; i += 2) {
@@ -318,7 +322,7 @@ function createGeometry(width, height, input = {}) {
     }
   }
   if (o.layout === "border") {
-    swag(12, 2, o.sag);
+    swag(12);
     for (const x of [8, width - 8]) {
       const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil((height + 40) / 12)));
       add(

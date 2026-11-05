@@ -44,7 +44,7 @@ export function createGeometry(width, height, input = {}) {
       distance += length;
     }
   };
-  const swag = (y, waves = 2, sag = o.sag) => {
+  const swag = (y, waves = o.anchorCount || 2, sag = o.sag) => {
     // Continue a half-span beyond both edges: no exposed cable ends in the viewport.
     const span = width / waves,
       depth = Math.min(sag, height * 0.25);
@@ -77,9 +77,10 @@ export function createGeometry(width, height, input = {}) {
     }
   };
   if (o.layout === 'roofline') swag(12);
-  if (o.layout === 'draped') for (let row = 0; row < 3; row++) swag(12 + row * 38, 3, o.sag * 0.65);
+  if (o.layout === 'draped')
+    for (let row = 0; row < 3; row++) swag(12 + row * 38, o.anchorCount || 3, o.sag * 0.65);
   if (o.layout === 'curtain') {
-    swag(12, 2, o.sag);
+    swag(12);
     // Attach drops midway between the bulbs that actually fit on the header.
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
@@ -114,7 +115,7 @@ export function createGeometry(width, height, input = {}) {
     }
   }
   if (o.layout === 'border') {
-    swag(12, 2, o.sag);
+    swag(12);
     for (const x of [8, width - 8]) {
       const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil((height + 40) / 12)));
       add(

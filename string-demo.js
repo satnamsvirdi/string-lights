@@ -13,6 +13,7 @@ const defaults = {
   colors: 'multicolor',
   shape: 'rice',
   spacing: 28,
+  anchorCount: 0,
   size: 1.2,
   speed: 1,
   glow: 0.65,
@@ -41,6 +42,7 @@ const valueKeys = [
   'mode',
   'layout',
   'spacing',
+  'anchorCount',
   'size',
   'speed',
   'glow',
@@ -108,6 +110,7 @@ function reflect() {
     ? 'Play this string'
     : 'Pause this string';
   $('spacingValue').textContent = `${selected.options.spacing} px`;
+  $('anchorCountValue').textContent = selected.options.anchorCount || 'Auto';
   $('sizeValue').textContent = `${Number(selected.options.size).toFixed(1)}×`;
   $('activePattern').textContent = selected.controller.pattern;
 }
