@@ -23,6 +23,7 @@ export function createLighting(state) {
       state.destroyed ||
       isInactive(state) ||
       media.matches ||
+      !state.options.animated ||
       state.options.patternOrder === 'fixed' ||
       state.options.patternSequence.length < 2
     )
@@ -31,7 +32,7 @@ export function createLighting(state) {
     patternTimer = win.setTimeout(() => {
       patternTimer = 0;
       if (state.destroyed) return;
-      if (isInactive(state) || media.matches) {
+      if (isInactive(state) || media.matches || !state.options.animated) {
         patternRemaining = 0;
         return;
       }
@@ -54,7 +55,7 @@ export function createLighting(state) {
     animations.forEach((a) => a.cancel());
     animations = [];
     for (const [index, { light, bulb }] of state.bulbs.entries()) {
-      if (mode === 'static' || media.matches || !light.animate) continue;
+      if (mode === 'static' || !state.options.animated || media.matches || !light.animate) continue;
       let frames,
         duration = 4000 / state.options.speed,
         delay = 0;
@@ -62,12 +63,12 @@ export function createLighting(state) {
       if (mode === 'twinkle') {
         frames = [
           { opacity: 1 },
-          { opacity: low, offset: 0.35 },
-          { opacity: 0.75, offset: 0.5 },
-          { opacity: state.options.dimBase ? 0.03 : 0.25, offset: 0.7 },
+          { opacity: state.options.dimBase ? low : 0.45, offset: 0.35 },
+          { opacity: 0.85, offset: 0.5 },
+          { opacity: state.options.dimBase ? 0.03 : 0.6, offset: 0.7 },
           { opacity: 1 },
         ];
-        duration *= 1 + bulb.phase;
+        duration = (3000 / state.options.speed) * (1 + bulb.phase * 0.6);
         delay = -bulb.phase * duration;
       } else if (mode === 'wave') {
         frames = [{ opacity: low }, { opacity: 1 }, { opacity: low }];
@@ -119,7 +120,12 @@ export function createLighting(state) {
     },
     sync() {
       animations.forEach((a) => (isInactive(state) ? a.pause() : a.play()));
-      if (isInactive(state) || media.matches || state.options.patternOrder === 'fixed')
+      if (
+        isInactive(state) ||
+        media.matches ||
+        !state.options.animated ||
+        state.options.patternOrder === 'fixed'
+      )
         stopPatternClock();
       else startPatternClock();
     },

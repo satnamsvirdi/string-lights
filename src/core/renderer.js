@@ -2,13 +2,26 @@ import { createGeometry } from './geometry.js';
 import { svgNode } from './svg.js';
 import { materialDefinitions, bulbArtwork } from './materials.js';
 import { pathFor } from './paths.js';
+import { dimensions } from './dimensions.js';
 export function renderScene(state) {
-  const { doc, win, svg, host, page, id, media, options } = state;
+  const { doc, svg, page, id, media, options, host, win } = state;
   const root = doc.createDocumentFragment();
   state.strands = [];
   state.bulbs = [];
-  const w = page ? win.innerWidth : host.clientWidth,
-    h = page ? win.innerHeight : host.clientHeight;
+  if (page) svg.dataset.stringPage = options.pagePosition;
+  const [w, h] = dimensions(state);
+  if (page)
+    Object.assign(svg.style, {
+      position: options.pagePosition,
+      width: `${w}px`,
+      height: `${h}px`,
+      inset: '0 auto auto 0',
+    });
+  if (page && options.pagePosition === 'absolute') {
+    const rect = host.getBoundingClientRect();
+    svg.style.left = `${-(rect.left + win.scrollX + host.clientLeft)}px`;
+    svg.style.top = `${-(rect.top + win.scrollY + host.clientTop)}px`;
+  }
   state.width = w;
   state.height = h;
   svg.setAttribute('viewBox', `0 0 ${Math.max(1, w)} ${Math.max(1, h)}`);

@@ -33,7 +33,8 @@ var defaults = /* @__PURE__ */ Object.freeze({
   layout: "roofline",
   shape: "rice",
   colors: "multicolor",
-  mode: "static",
+  mode: "twinkle",
+  animated: true,
   spacing: 28,
   size: 1,
   sag: 48,
@@ -46,6 +47,7 @@ var defaults = /* @__PURE__ */ Object.freeze({
   interactive: true,
   seed: 7,
   paused: false,
+  pagePosition: "fixed",
   patternOrder: "fixed",
   patternInterval: 10,
   patternSequence: /* @__PURE__ */ Object.freeze(["blink", "chase", "wave", "twinkle"])
@@ -60,7 +62,8 @@ function normalizeOptions(input = {}) {
   for (const [key, list] of [
     ["layout", layouts],
     ["mode", modes],
-    ["patternOrder", ["fixed", "cycle", "random"]]
+    ["patternOrder", ["fixed", "cycle", "random"]],
+    ["pagePosition", ["fixed", "absolute"]]
   ]) {
     if (!list.includes(o[key])) throw new TypeError(`Unknown ${key}: ${o[key]}`);
   }
@@ -92,7 +95,7 @@ function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError("seed must be finite.");
-  for (const key of ["glitter", "dimBase", "breeze", "interactive", "paused"]) {
+  for (const key of ["glitter", "dimBase", "breeze", "interactive", "paused", "animated"]) {
     if (typeof o[key] !== "boolean") throw new TypeError(`${key} must be boolean.`);
   }
   return o;
@@ -220,11 +223,12 @@ function createGeometry(width, height, input = {}) {
     throw new TypeError("Geometry dimensions must be finite.");
   if (width > 1e6 || height > 1e6)
     throw new RangeError("Geometry dimensions cannot exceed 1,000,000 CSS pixels.");
-  const o = normalizeOptions(input), rand = random(o.seed), wires = [], bulbs = [];
+  const o = normalizeOptions(input), rand = random(o.seed), wires = [], freeEnds = /* @__PURE__ */ new Set(), bulbs = [];
   if (!(width > 0 && height > 0)) return { wires, bulbs };
-  const add = (points, angle = 0) => {
+  const add = (points, angle = 0, freeEnd = false) => {
     const wire = wires.length;
     wires.push(points);
+    if (freeEnd) freeEnds.add(wire);
     let distance = 0, next = o.spacing * 0.5;
     for (let i = 1; i < points.length && bulbs.length < MAX_BULBS; i++) {
       const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.y - a.y);
@@ -291,7 +295,9 @@ function createGeometry(width, height, input = {}) {
           x,
           y: y + length * j / n,
           mobility: (j / n) ** 2
-        }))
+        })),
+        0,
+        true
       );
     }
   }
@@ -305,11 +311,48 @@ function createGeometry(width, height, input = {}) {
           y: -20 + (height + 40) * i / n,
           mobility: (i / n) ** 2
         })),
-        x < width / 2 ? -90 : 90
+        x < width / 2 ? -90 : 90,
+        true
       );
     }
   }
-  return { wires, bulbs: clearBulbOverlaps(bulbs, o) };
+  const accepted = clearBulbOverlaps(bulbs, o);
+  const byWire = /* @__PURE__ */ new Map();
+  for (const bulb of accepted) {
+    if (!byWire.has(bulb.wire)) byWire.set(bulb.wire, []);
+    byWire.get(bulb.wire).push(bulb);
+  }
+  for (const index of freeEnds) {
+    const mounted = byWire.get(index) || [];
+    const last = mounted.at(-1), points = wires[index];
+    if (!last) {
+      points.length = 0;
+      continue;
+    }
+    const segment = last.segment, t = last.t;
+    const mobility = last.mobility;
+    if (t > 1e-8) {
+      points.splice(segment + 1, points.length, { x: last.x, y: last.y, mobility });
+      for (const bulb of mounted) if (bulb.segment === segment) bulb.t /= t;
+    } else {
+      points.length = segment + 1;
+      for (const bulb of mounted)
+        if (bulb.segment === segment) {
+          bulb.segment--;
+          bulb.t = 1;
+        }
+    }
+    for (const point of points) point.mobility /= mobility;
+    for (const bulb of mounted) bulb.mobility /= mobility;
+  }
+  const indices = /* @__PURE__ */ new Map();
+  const visibleWires = wires.filter((points, index) => {
+    if (points.length < 2) return false;
+    indices.set(index, indices.size);
+    return true;
+  });
+  for (const bulb of accepted) bulb.wire = indices.get(bulb.wire);
+  return { wires: visibleWires, bulbs: accepted };
 }
 function clearBulbOverlaps(bulbs, o) {
   const accepted = [], cells = /* @__PURE__ */ new Map();
@@ -372,10 +415,152 @@ function svgNode(doc, tag, attrs = {}, parent) {
   return n;
 }
 
+// src/core/tether.js
+function tether(point, a, ra, b, rb) {
+  const x = point.x, y = point.y;
+  if (!a.pinned && !b.pinned) return;
+  if (!a.pinned) {
+    [a, b] = [b, a];
+    [ra, rb] = [rb, ra];
+  }
+  const ax = a.homeX, ay = a.homeY, bx = b.homeX, by = b.homeY;
+  const da = Math.hypot(x - ax, y - ay), db = Math.hypot(x - bx, y - by);
+  if (da <= ra && (!b.pinned || db <= rb)) return;
+  const qa = Math.min(1, ra / Math.max(da, 1e-12));
+  const x1 = ax + (x - ax) * qa, y1 = ay + (y - ay) * qa;
+  if (!b.pinned || Math.hypot(x1 - bx, y1 - by) <= rb) {
+    point.x = x1;
+    point.y = y1;
+    return;
+  }
+  const qb = Math.min(1, rb / Math.max(db, 1e-12));
+  const x2 = bx + (x - bx) * qb, y2 = by + (y - by) * qb;
+  if (Math.hypot(x2 - ax, y2 - ay) <= ra) {
+    point.x = x2;
+    point.y = y2;
+    return;
+  }
+  const dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy);
+  if (d < 1e-12) {
+    point.x = x1;
+    point.y = y1;
+    return;
+  }
+  const along = (ra * ra - rb * rb + d * d) / (2 * d), h = Math.sqrt(Math.max(0, ra * ra - along * along));
+  const cx = ax + dx / d * along, cy = ay + dy / d * along;
+  const side = (x - cx) * -dy + (y - cy) * dx < 0 ? -1 : 1;
+  point.x = cx - side * dy / d * h;
+  point.y = cy + side * dx / d * h;
+}
+
 // src/core/physics.js
 var PHYSICS_STEP = 1 / 120;
 var GRAVITY = 980;
-var CONSTRAINT_PASSES = 40;
+var SOLVERS = /* @__PURE__ */ new WeakMap();
+var TAUT = /* @__PURE__ */ new WeakSet();
+function constrainLengths(rope, grab, predictor = false) {
+  const { nodes, lengths } = rope, count = lengths.length;
+  let work = SOLVERS.get(rope);
+  if (!work) {
+    work = Array.from({ length: 10 }, (_, i) => new Float64Array(count + (i >= 7 ? 1 : 0)));
+    for (let i = 0; i < count; i++) work[9][i + 1] = work[9][i] + lengths[i];
+    SOLVERS.set(rope, work);
+  }
+  const [nx, ny, upper, rhs, lambda, bx, by, deltaX, deltaY] = work;
+  const segment = grab?.segment ?? -2, t = grab?.t ?? 0, u = 1 - t;
+  const ma = nodes[segment]?.mass ?? 0, mb = nodes[segment + 1]?.mass ?? 0;
+  const coupling = (i) => i === segment - 1 ? ma * u : i === segment ? mb * t - ma * u : i === segment + 1 ? -mb * t : 0;
+  let error = 0, energy = 0;
+  for (let i = 0; i < count; i++) {
+    const a = nodes[i], b = nodes[i + 1], dx = predictor ? b.px - a.px : b.x - a.x, dy = predictor ? b.py - a.py : b.y - a.y;
+    const distance = Math.max(1e-14, Math.hypot(dx, dy));
+    nx[i] = dx / distance;
+    ny[i] = dy / distance;
+    const residual = lengths[i] - Math.hypot(b.x - a.x, b.y - a.y);
+    rhs[i] = predictor ? lengths[i] - distance - nx[i] * (b.x - a.x - dx) - ny[i] * (b.y - a.y - dy) : residual;
+    error = Math.max(error, Math.abs(residual));
+    energy += residual * residual;
+    if (grab) {
+      const c = coupling(i);
+      bx[i] = nx[i] * c;
+      by[i] = ny[i] * c;
+    }
+  }
+  if (grab) {
+    const p = ropeAttachment(rope, segment, t);
+    error = Math.max(error, Math.hypot(grab.x - p.x, grab.y - p.y));
+    energy += (grab.x - p.x) ** 2 + (grab.y - p.y) ** 2;
+  }
+  if (error < 1e-11) return;
+  for (let i = 0; i < count; i++) {
+    const lower = i ? -nodes[i].mass * (nx[i] * nx[i - 1] + ny[i] * ny[i - 1]) : 0;
+    const diagonal = Math.max(
+      1e-14,
+      nodes[i].mass + nodes[i + 1].mass + 1e-14 - lower * (upper[i - 1] || 0)
+    );
+    upper[i] = i + 1 < count ? -nodes[i + 1].mass * (nx[i] * nx[i + 1] + ny[i] * ny[i + 1]) / diagonal : 0;
+    rhs[i] = (rhs[i] - lower * (rhs[i - 1] || 0)) / diagonal;
+    if (grab) {
+      bx[i] = (bx[i] - lower * (bx[i - 1] || 0)) / diagonal;
+      by[i] = (by[i] - lower * (by[i - 1] || 0)) / diagonal;
+    }
+  }
+  for (let i = count - 1; i >= 0; i--) {
+    lambda[i] = rhs[i] - upper[i] * (lambda[i + 1] || 0);
+    if (grab) {
+      bx[i] -= upper[i] * (bx[i + 1] || 0);
+      by[i] -= upper[i] * (by[i + 1] || 0);
+    }
+  }
+  let handX = 0, handY = 0;
+  if (grab && ma * u * u + mb * t * t > 1e-8) {
+    const point = ropeAttachment(rope, segment, t);
+    let xx = ma * u * u + mb * t * t + 1e-14, yy = xx, xy = 0;
+    let rx = grab.x - point.x, ry = grab.y - point.y;
+    for (let i = Math.max(0, segment - 1); i < Math.min(count, segment + 2); i++) {
+      const x = nx[i] * coupling(i), y = ny[i] * coupling(i);
+      xx -= x * bx[i];
+      yy -= y * by[i];
+      xy -= x * by[i];
+      rx -= x * lambda[i];
+      ry -= y * lambda[i];
+    }
+    const determinant = Math.max(1e-16, xx * yy - xy * xy);
+    handX = (rx * yy - ry * xy) / determinant;
+    handY = (ry * xx - rx * xy) / determinant;
+    for (let i = 0; i < count; i++) lambda[i] -= bx[i] * handX + by[i] * handY;
+  }
+  for (let i = 0; i < nodes.length; i++) {
+    const p = nodes[i];
+    const hand = i === segment ? u : i === segment + 1 ? t : 0;
+    deltaX[i] = p.mass * ((i ? nx[i - 1] * lambda[i - 1] : 0) - (i < count ? nx[i] * lambda[i] : 0) + hand * handX);
+    deltaY[i] = p.mass * ((i ? ny[i - 1] * lambda[i - 1] : 0) - (i < count ? ny[i] * lambda[i] : 0) + hand * handY);
+  }
+  let scale = 1;
+  for (let attempt = 0; !grab && attempt < 18; attempt++) {
+    let next = 0;
+    for (let i = 0; i < count; i++) {
+      const a = nodes[i], b = nodes[i + 1];
+      const d = Math.hypot(
+        b.x - a.x + scale * (deltaX[i + 1] - deltaX[i]),
+        b.y - a.y + scale * (deltaY[i + 1] - deltaY[i])
+      ) - lengths[i];
+      next += d * d;
+    }
+    if (grab) {
+      const p = ropeAttachment(rope, segment, t);
+      next += (p.x + scale * (deltaX[segment] * u + deltaX[segment + 1] * t) - grab.x) ** 2 + (p.y + scale * (deltaY[segment] * u + deltaY[segment + 1] * t) - grab.y) ** 2;
+    }
+    if (next <= energy + 1e-16) break;
+    scale *= 0.5;
+  }
+  for (let i = 0; i < nodes.length; i++) {
+    nodes[i].x += scale * deltaX[i];
+    nodes[i].y += scale * deltaY[i];
+    if (!grab && !nodes[i].pinned)
+      tether(nodes[i], nodes[0], work[9][i], nodes.at(-1), work[9][count] - work[9][i]);
+  }
+}
 function createRope(points) {
   const nodes = points.map((p) => ({
     x: p.x,
@@ -391,14 +576,26 @@ function createRope(points) {
   nodes.forEach((n, i) => {
     n.mass = n.pinned ? 0 : 24 / Math.max(1, (lengths[i - 1] ?? lengths[0]) + (lengths[i] ?? lengths.at(-1)));
   });
-  return { nodes, lengths, active: false, accumulator: 0, quietTime: 0, sleeping: false };
+  const rope = { nodes, lengths, active: false, accumulator: 0, quietTime: 0, sleeping: false };
+  if (nodes[0]?.pinned && nodes.at(-1)?.pinned && Math.abs(
+    lengths.reduce((sum, length) => sum + length, 0) - Math.hypot(nodes.at(-1).x - nodes[0].x, nodes.at(-1).y - nodes[0].y)
+  ) < 1e-8)
+    TAUT.add(rope);
+  return rope;
 }
 function ropeAttachment(rope, segment, t) {
   const a = rope.nodes[segment], b = rope.nodes[segment + 1];
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 function stepRope(rope, dt, grab = null, wind = 0) {
-  const { nodes, lengths } = rope;
+  const { nodes } = rope;
+  if (TAUT.has(rope)) {
+    for (const p of nodes) {
+      p.x = p.px = p.homeX;
+      p.y = p.py = p.homeY;
+    }
+    return;
+  }
   for (const p of nodes) {
     if (p.pinned) {
       p.x = p.homeX;
@@ -413,30 +610,8 @@ function stepRope(rope, dt, grab = null, wind = 0) {
     p.x += vx + wind * dt * dt;
     p.y += vy + GRAVITY * dt * dt;
   }
-  function hold() {
-    if (!grab) return;
-    const a = nodes[grab.segment], b = nodes[grab.segment + 1], u = 1 - grab.t;
-    const point = ropeAttachment(rope, grab.segment, grab.t);
-    const weight = a.mass * u * u + b.mass * grab.t * grab.t;
-    if (weight < 1e-8) return;
-    a.x += (grab.x - point.x) * a.mass * u / weight;
-    a.y += (grab.y - point.y) * a.mass * u / weight;
-    b.x += (grab.x - point.x) * b.mass * grab.t / weight;
-    b.y += (grab.y - point.y) * b.mass * grab.t / weight;
-  }
-  for (let pass = 0; pass < CONSTRAINT_PASSES; pass++) {
-    hold();
-    for (let k = 0; k < lengths.length; k++) {
-      const i = pass % 2 ? lengths.length - 1 - k : k, a = nodes[i], b = nodes[i + 1];
-      const dx = b.x - a.x, dy = b.y - a.y, length = Math.hypot(dx, dy), weight = a.mass + b.mass;
-      if (!weight || !length) continue;
-      const error = (length - lengths[i]) / length / weight;
-      a.x += dx * error * a.mass;
-      a.y += dy * error * a.mass;
-      b.x -= dx * error * b.mass;
-      b.y -= dy * error * b.mass;
-    }
-  }
+  if (!grab) constrainLengths(rope, null, true);
+  for (let pass = 0; pass < (grab ? 12 : 6); pass++) constrainLengths(rope, grab);
 }
 function releaseRope(rope, grab, velocity) {
   const a = rope.nodes[grab.segment], b = rope.nodes[grab.segment + 1], u = 1 - grab.t, dt = PHYSICS_STEP;
@@ -483,13 +658,12 @@ function createInteraction(state) {
     const p = pointerPosition(event);
     if (!p) return;
     if (!strand.rope?.active) {
-      strand.rope = createRope(
-        strand.points.map((point) => ({
-          ...point,
-          x: point.x + strand.offset * point.mobility,
-          y: point.y + strand.offset * 0.12 * point.mobility
-        }))
-      );
+      strand.rope = createRope(strand.points);
+      strand.rope.nodes.forEach((node, i) => {
+        const shift = strand.offset * strand.points[i].mobility;
+        node.x = node.px = node.homeX + shift;
+        node.y = node.py = node.homeY + shift * 0.12;
+      });
     }
     if (!attachment) {
       let closest = Infinity;
@@ -545,18 +719,7 @@ function createInteraction(state) {
     const { nodes, lengths } = state.drag.strand.rope;
     const leftLength = lengths.slice(0, state.drag.segment).reduce((a, b) => a + b, 0) + lengths[state.drag.segment] * state.drag.t;
     const total = lengths.reduce((a, b) => a + b, 0);
-    for (let i = 0; i < 12; i++)
-      for (const [anchor, radius] of [
-        [nodes[0], leftLength],
-        [nodes.at(-1), total - leftLength]
-      ]) {
-        if (!anchor.pinned) continue;
-        const dx2 = state.drag.x - anchor.homeX, dy2 = state.drag.y - anchor.homeY, distance = Math.hypot(dx2, dy2);
-        if (distance > radius) {
-          state.drag.x = anchor.homeX + dx2 * radius / distance;
-          state.drag.y = anchor.homeY + dy2 * radius / distance;
-        }
-      }
+    tether(state.drag, nodes[0], leftLength, nodes.at(-1), total - leftLength);
     const now = win.performance.now(), dx = state.drag.x - previousX, dy = state.drag.y - previousY;
     if (Math.hypot(dx, dy) > 0.01) {
       const dt = clamp((now - state.drag.sampleTime) / 1e3, 1 / 240, 0.1);
@@ -617,13 +780,13 @@ function createLighting(state) {
     patternRemaining = Math.max(0, patternRemaining - (win.performance.now() - patternStarted));
   }
   function startPatternClock() {
-    if (patternTimer || state.destroyed || isInactive(state) || media.matches || state.options.patternOrder === "fixed" || state.options.patternSequence.length < 2)
+    if (patternTimer || state.destroyed || isInactive(state) || media.matches || !state.options.animated || state.options.patternOrder === "fixed" || state.options.patternSequence.length < 2)
       return;
     patternStarted = win.performance.now();
     patternTimer = win.setTimeout(() => {
       patternTimer = 0;
       if (state.destroyed) return;
-      if (isInactive(state) || media.matches) {
+      if (isInactive(state) || media.matches || !state.options.animated) {
         patternRemaining = 0;
         return;
       }
@@ -646,18 +809,18 @@ function createLighting(state) {
     animations.forEach((a) => a.cancel());
     animations = [];
     for (const [index, { light, bulb }] of state.bulbs.entries()) {
-      if (mode === "static" || media.matches || !light.animate) continue;
+      if (mode === "static" || !state.options.animated || media.matches || !light.animate) continue;
       let frames, duration = 4e3 / state.options.speed, delay = 0;
       const low = state.options.dimBase ? 0.02 : 0.2;
       if (mode === "twinkle") {
         frames = [
           { opacity: 1 },
-          { opacity: low, offset: 0.35 },
-          { opacity: 0.75, offset: 0.5 },
-          { opacity: state.options.dimBase ? 0.03 : 0.25, offset: 0.7 },
+          { opacity: state.options.dimBase ? low : 0.45, offset: 0.35 },
+          { opacity: 0.85, offset: 0.5 },
+          { opacity: state.options.dimBase ? 0.03 : 0.6, offset: 0.7 },
           { opacity: 1 }
         ];
-        duration *= 1 + bulb.phase;
+        duration = 3e3 / state.options.speed * (1 + bulb.phase * 0.6);
         delay = -bulb.phase * duration;
       } else if (mode === "wave") {
         frames = [{ opacity: low }, { opacity: 1 }, { opacity: low }];
@@ -705,7 +868,7 @@ function createLighting(state) {
     },
     sync() {
       animations.forEach((a) => isInactive(state) ? a.pause() : a.play());
-      if (isInactive(state) || media.matches || state.options.patternOrder === "fixed")
+      if (isInactive(state) || media.matches || !state.options.animated || state.options.patternOrder === "fixed")
         stopPatternClock();
       else startPatternClock();
     }
@@ -1224,13 +1387,42 @@ function dimBaseMaterial(doc, parent, light, options) {
   return light;
 }
 
+// src/core/dimensions.js
+function dimensions({ page, options, win, host, doc }) {
+  if (!page) return [host.clientWidth, host.clientHeight];
+  if (options.pagePosition === "fixed") return [win.innerWidth, win.innerHeight];
+  const overlays = [...doc.querySelectorAll('svg[data-string-page="absolute"]')];
+  const previous = overlays.map((overlay) => overlay.style.height);
+  overlays.forEach((overlay) => {
+    overlay.style.height = "0px";
+  });
+  const height = Math.max(win.innerHeight, doc.documentElement.scrollHeight, doc.body.scrollHeight);
+  overlays.forEach((overlay, i) => {
+    overlay.style.height = previous[i];
+  });
+  return [doc.documentElement.clientWidth || win.innerWidth, height];
+}
+
 // src/core/renderer.js
 function renderScene(state) {
-  const { doc, win, svg, host, page, id, media, options } = state;
+  const { doc, svg, page, id, media, options, host, win } = state;
   const root = doc.createDocumentFragment();
   state.strands = [];
   state.bulbs = [];
-  const w = page ? win.innerWidth : host.clientWidth, h = page ? win.innerHeight : host.clientHeight;
+  if (page) svg.dataset.stringPage = options.pagePosition;
+  const [w, h] = dimensions(state);
+  if (page)
+    Object.assign(svg.style, {
+      position: options.pagePosition,
+      width: `${w}px`,
+      height: `${h}px`,
+      inset: "0 auto auto 0"
+    });
+  if (page && options.pagePosition === "absolute") {
+    const rect = host.getBoundingClientRect();
+    svg.style.left = `${-(rect.left + win.scrollX + host.clientLeft)}px`;
+    svg.style.top = `${-(rect.top + win.scrollY + host.clientTop)}px`;
+  }
   state.width = w;
   state.height = h;
   svg.setAttribute("viewBox", `0 0 ${Math.max(1, w)} ${Math.max(1, h)}`);
@@ -1306,7 +1498,8 @@ var liveKeys = /* @__PURE__ */ new Set([
   "patternSequence",
   "paused",
   "breeze",
-  "wind"
+  "wind",
+  "animated"
 ]);
 function retainHost(host, win) {
   let record = host[hostRecordKey];
@@ -1340,7 +1533,7 @@ function createStringLights(target, input = {}) {
   const options = normalizeOptions(input);
   const doc = host.ownerDocument, win = doc.defaultView;
   const page = host === doc.body || host === doc.documentElement;
-  if (!page) retainHost(host, win);
+  let retainedHost = false;
   const id = nextId("string");
   const svg = svgNode(
     doc,
@@ -1387,6 +1580,12 @@ function createStringLights(target, input = {}) {
   }
   function render() {
     if (state.destroyed) return;
+    const retain = !page || state.options.pagePosition === "absolute";
+    if (retain !== retainedHost) {
+      if (retain) retainHost(host, win);
+      else releaseHost(host);
+      retainedHost = retain;
+    }
     interaction.release();
     lighting.cancel();
     motion.reset();
@@ -1399,8 +1598,7 @@ function createStringLights(target, input = {}) {
   state.release = interaction.release;
   function resize() {
     if (state.destroyed || resizeFrame) return;
-    const width = page ? win.innerWidth : host.clientWidth;
-    const height = page ? win.innerHeight : host.clientHeight;
+    const [width, height] = dimensions(state);
     if (width === state.width && height === state.height) return;
     resizeFrame = win.requestAnimationFrame(() => {
       resizeFrame = 0;
@@ -1409,6 +1607,7 @@ function createStringLights(target, input = {}) {
   }
   const observer = typeof win.ResizeObserver === "function" ? new win.ResizeObserver(resize) : null;
   observer?.observe(host);
+  if (page) observer?.observe(doc.documentElement);
   const visibility = !page && typeof win.IntersectionObserver === "function" ? new win.IntersectionObserver(
     (entries) => {
       if (state.destroyed) return;
@@ -1441,7 +1640,7 @@ function createStringLights(target, input = {}) {
     svg.remove();
     state.strands = [];
     state.bulbs = [];
-    if (!page) releaseHost(host);
+    if (retainedHost) releaseHost(host);
   }
   try {
     render();
@@ -1466,7 +1665,7 @@ function createStringLights(target, input = {}) {
         render();
         return;
       }
-      if (programChanged) lighting.apply();
+      if (programChanged || changed.includes("animated")) lighting.apply();
       else if (changed.includes("speed")) lighting.updateSpeed();
       sync();
     },

@@ -18,6 +18,8 @@ test('runtime flags and invalid geometry dimensions fail clearly', () => {
     { glitter: 1 },
     { breeze: null },
     { interactive: 'yes' },
+    { pagePosition: 'sticky' },
+    { animated: 'false' },
   ])
     assert.throws(() => normalizeOptions(input), TypeError);
   for (const width of [NaN, Infinity, -Infinity])
@@ -30,6 +32,9 @@ test('exported shared palettes and enum collections are immutable', () => {
 });
 test('undefined optional values use defaults and unknown keys do not trigger instance changes', () => {
   assert.equal(normalizeOptions({ size: undefined }).size, 1);
+  assert.equal(normalizeOptions().mode, 'twinkle');
+  assert.equal(normalizeOptions().animated, true);
+  assert.equal(normalizeOptions().pagePosition, 'fixed');
   assert.equal(Object.hasOwn(normalizeOptions({ unknown: 'value' }), 'unknown'), false);
 });
 test('large sections bound cable sampling and bulb counts', () => {

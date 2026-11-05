@@ -4,6 +4,7 @@ import { createInteraction } from './interaction.js';
 import { createLighting } from './lighting.js';
 import { createMotion } from './motion.js';
 import { renderScene } from './renderer.js';
+import { dimensions } from './dimensions.js';
 
 // Shared ownership also covers a copied registry engine and an npm engine on one host.
 const hostRecordKey = /* @__PURE__ */ Symbol.for('string-lights.host-position.v1');
@@ -17,6 +18,7 @@ const liveKeys = new Set([
   'paused',
   'breeze',
   'wind',
+  'animated',
 ]);
 
 function retainHost(host, win) {
@@ -59,7 +61,7 @@ export function createStringLights(target, input = {}) {
   const doc = host.ownerDocument,
     win = doc.defaultView;
   const page = host === doc.body || host === doc.documentElement;
-  if (!page) retainHost(host, win);
+  let retainedHost = false;
   const id = nextId('string');
   const svg = svgNode(
     doc,
@@ -106,6 +108,12 @@ export function createStringLights(target, input = {}) {
   }
   function render() {
     if (state.destroyed) return;
+    const retain = !page || state.options.pagePosition === 'absolute';
+    if (retain !== retainedHost) {
+      if (retain) retainHost(host, win);
+      else releaseHost(host);
+      retainedHost = retain;
+    }
     interaction.release();
     lighting.cancel();
     motion.reset();
@@ -118,8 +126,7 @@ export function createStringLights(target, input = {}) {
   state.release = interaction.release;
   function resize() {
     if (state.destroyed || resizeFrame) return;
-    const width = page ? win.innerWidth : host.clientWidth;
-    const height = page ? win.innerHeight : host.clientHeight;
+    const [width, height] = dimensions(state);
     if (width === state.width && height === state.height) return;
     resizeFrame = win.requestAnimationFrame(() => {
       resizeFrame = 0;
@@ -128,6 +135,7 @@ export function createStringLights(target, input = {}) {
   }
   const observer = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(resize) : null;
   observer?.observe(host);
+  if (page) observer?.observe(doc.documentElement);
   const visibility =
     !page && typeof win.IntersectionObserver === 'function'
       ? new win.IntersectionObserver(
@@ -164,7 +172,7 @@ export function createStringLights(target, input = {}) {
     svg.remove();
     state.strands = [];
     state.bulbs = [];
-    if (!page) releaseHost(host);
+    if (retainedHost) releaseHost(host);
   }
   try {
     render();
@@ -189,7 +197,7 @@ export function createStringLights(target, input = {}) {
         render();
         return;
       }
-      if (programChanged) lighting.apply();
+      if (programChanged || changed.includes('animated')) lighting.apply();
       else if (changed.includes('speed')) lighting.updateSpeed();
       sync();
     },

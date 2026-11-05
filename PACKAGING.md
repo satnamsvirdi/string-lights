@@ -11,10 +11,10 @@ npm pack ./packages/string-lights-core --pack-destination ./artifacts
 npm pack ./packages/string-lights-react --pack-destination ./artifacts
 ```
 
-The `artifacts` directory is tracked and already exists. Build creates the ESM bundles, source maps, declarations, and MIT license copies. Package preparation runs the same build automatically. The current version is in each package manifest; npm names the tarballs `string-lights-VERSION.tgz` and `string-lights-react-VERSION.tgz`. For version 0.1.1:
+The `artifacts` directory is tracked and already exists. Build creates the ESM bundles, source maps, declarations, and MIT license copies. Package preparation runs the same build automatically. The current version is in each package manifest; npm names the tarballs `string-lights-VERSION.tgz` and `string-lights-react-VERSION.tgz`. For version 0.2.0:
 
 ```sh
-npm install ./artifacts/string-lights-0.1.1.tgz ./artifacts/string-lights-react-0.1.1.tgz
+npm install ./artifacts/string-lights-0.2.0.tgz ./artifacts/string-lights-react-0.2.0.tgz
 ```
 
 The React package depends on the core and declares React 18 or 19 as a peer. Install both tarballs together while the core is unpublished. The core needs no runtime dependencies or global CSS. Both packages are ESM only; supported bundlers can remove unused exports because the packages declare `sideEffects: false` and preserve ESM exports. SSR imports do not access the DOM. Native browser script users can serve `packages/string-lights-core/dist/index.js` over HTTP and import from that URL.

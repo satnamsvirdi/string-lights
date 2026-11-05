@@ -8,6 +8,8 @@ import {
 const $ = (id) => document.getElementById(id);
 const defaults = {
   mode: 'twinkle',
+  animated: true,
+  pagePosition: 'absolute',
   colors: 'multicolor',
   shape: 'rice',
   spacing: 28,
@@ -45,6 +47,8 @@ const valueKeys = [
   'dimBase',
   'breeze',
   'interactive',
+  'animated',
+  'pagePosition',
   'patternOrder',
   'patternInterval',
 ];
@@ -204,7 +208,7 @@ for (const mode of modes) {
     ...defaults,
     layout,
     seed: 7 + index,
-    mode: ['twinkle', 'wave', 'static', 'chase'][index],
+    mode: ['twinkle', 'wave', 'twinkle', 'chase'][index],
   };
   if (layout === 'draped') options.colors = 'warm';
   add(sample, options, ['Roofline', 'Curtain', 'Draped', 'Component border'][index]);
@@ -249,7 +253,15 @@ $('preset').onchange = describePreset;
 describePreset();
 $('applyPreset').onclick = () => {
   const preset = stringLightsPresets[$('preset').value];
-  apply(clone({ ...preset.options, seed: selected.options.seed, paused: selected.options.paused }));
+  apply(
+    clone({
+      ...preset.options,
+      seed: selected.options.seed,
+      paused: selected.options.paused,
+      animated: selected.options.animated,
+      pagePosition: selected.options.pagePosition,
+    }),
+  );
   $('notice').textContent =
     `${preset.name} applied to ${selected.name}. Customize any control below.`;
 };

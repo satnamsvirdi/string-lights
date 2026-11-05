@@ -7,6 +7,8 @@ export interface StringOptions {
   shape?: StringShape | readonly StringShape[];
   colors?: StringPalette | readonly string[];
   mode?: StringMode;
+  /** Subtle twinkle is enabled by default. Disable light animation without losing the selected pattern. */
+  animated?: boolean;
   spacing?: number;
   size?: number;
   sag?: number;
@@ -19,6 +21,8 @@ export interface StringOptions {
   interactive?: boolean;
   seed?: number;
   paused?: boolean;
+  /** Body/document overlays: fixed to the viewport, or absolute and scrolling with the document. */
+  pagePosition?: 'fixed' | 'absolute';
   patternOrder?: 'fixed' | 'cycle' | 'random';
   patternInterval?: number;
   patternSequence?: readonly StringMode[];

@@ -9,7 +9,7 @@ Both npm packages share one version. `release-please-config.json` treats the rep
 | `feat!: change the API` or a `BREAKING CHANGE:` footer  | Major, including before 1.0 |
 | Documentation/tooling changes without a breaking marker | No release                  |
 
-`npm run version:auto` previews the next version from Conventional Commits since the most recent `v*` tag. It does not change files, commit, tag, or publish. Both npm packages began at `0.1.0`; the current release baseline is `0.1.1`. The configured initial GitHub release uses that baseline until a release tag exists. Subsequent versions use the table above. `.release-please-manifest.json` records the release baseline.
+`npm run version:auto` previews the next version from Conventional Commits since the most recent `v*` tag. It does not change files, commit, tag, or publish. Both npm packages began at `0.1.0`; the current release baseline is `0.2.0`. The configured initial GitHub release uses that baseline until a release tag exists. Subsequent versions use the table above. `.release-please-manifest.json` records the release baseline.
 
 ## GitHub automation
 

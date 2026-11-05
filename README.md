@@ -32,6 +32,17 @@ lights.destroy();
 
 Give the target a height or `min-height`. Use `document.body` for a fixed viewport overlay. Content stays clickable between the wires and bulbs.
 
+Lights subtly twinkle by default. Turn light animation off and on from any event handler without losing the selected pattern:
+
+```js
+lights.update({ animated: false }); // Steady bulbs; breeze is controlled separately.
+lights.update({ animated: true }); // Resume the selected lighting pattern.
+
+// Attach lights to the document so they scroll with the page:
+const pageLights = createStringLights(document.body, { pagePosition: 'absolute' });
+// Use pagePosition: 'fixed' to keep them on screen (the default).
+```
+
 ## React
 
 ```tsx
@@ -48,6 +59,28 @@ export function Celebration() {
 ```
 
 Set `fullPage` for a viewport decoration. The component accepts div attributes, `className`, `style`, and children. Static positioning becomes relative to keep the decoration inside its component without changing normal document flow. Absolute, fixed, sticky, and relative positioning are preserved. The SVG mounts after hydration and is isolated from React-owned children. Import `StringLightsProps` and `StringOptions` as types.
+
+For a settings checkbox or click handler, control `animated` with React state. This also works with scrolling page lights:
+
+```tsx
+'use client';
+import { useState } from 'react';
+import { StringLights } from 'string-lights-react';
+
+export function LightSettings() {
+  const [animated, setAnimated] = useState(true);
+  return (
+    <>
+      <button aria-pressed={animated} onClick={() => setAnimated((value) => !value)}>
+        Animate lights
+      </button>
+      <StringLights fullPage options={{ animated, pagePosition: 'absolute' }} />
+    </>
+  );
+}
+```
+
+Reduced-motion preferences still take priority. `pause()`/`play()` stop and resume both lighting and physical motion; `animated` changes only bulb lighting.
 
 ## Install and distribute
 

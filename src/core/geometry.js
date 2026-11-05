@@ -11,11 +11,13 @@ export function createGeometry(width, height, input = {}) {
   const o = normalizeOptions(input),
     rand = random(o.seed),
     wires = [],
+    freeEnds = new Set(),
     bulbs = [];
   if (!(width > 0 && height > 0)) return { wires, bulbs };
-  const add = (points, angle = 0) => {
+  const add = (points, angle = 0, freeEnd = false) => {
     const wire = wires.length;
     wires.push(points);
+    if (freeEnd) freeEnds.add(wire);
     let distance = 0,
       next = o.spacing * 0.5;
     for (let i = 1; i < points.length && bulbs.length < MAX_BULBS; i++) {
@@ -97,6 +99,8 @@ export function createGeometry(width, height, input = {}) {
           y: y + (length * j) / n,
           mobility: (j / n) ** 2,
         })),
+        0,
+        true,
       );
     }
   }
@@ -111,10 +115,50 @@ export function createGeometry(width, height, input = {}) {
           mobility: (i / n) ** 2,
         })),
         x < width / 2 ? -90 : 90,
+        true,
       );
     }
   }
-  return { wires, bulbs: clearBulbOverlaps(bulbs, o) };
+  const accepted = clearBulbOverlaps(bulbs, o);
+  const byWire = new Map();
+  for (const bulb of accepted) {
+    if (!byWire.has(bulb.wire)) byWire.set(bulb.wire, []);
+    byWire.get(bulb.wire).push(bulb);
+  }
+  // Trim after overlap removal: a skipped terminal bulb must not leave a bare cable tail.
+  for (const index of freeEnds) {
+    const mounted = byWire.get(index) || [];
+    const last = mounted.at(-1),
+      points = wires[index];
+    if (!last) {
+      points.length = 0;
+      continue;
+    }
+    const segment = last.segment,
+      t = last.t;
+    const mobility = last.mobility;
+    if (t > 1e-8) {
+      points.splice(segment + 1, points.length, { x: last.x, y: last.y, mobility });
+      for (const bulb of mounted) if (bulb.segment === segment) bulb.t /= t;
+    } else {
+      points.length = segment + 1;
+      for (const bulb of mounted)
+        if (bulb.segment === segment) {
+          bulb.segment--;
+          bulb.t = 1;
+        }
+    }
+    for (const point of points) point.mobility /= mobility;
+    for (const bulb of mounted) bulb.mobility /= mobility;
+  }
+  const indices = new Map();
+  const visibleWires = wires.filter((points, index) => {
+    if (points.length < 2) return false;
+    indices.set(index, indices.size);
+    return true;
+  });
+  for (const bulb of accepted) bulb.wire = indices.get(bulb.wire);
+  return { wires: visibleWires, bulbs: accepted };
 }
 function clearBulbOverlaps(bulbs, o) {
   // Compare physical envelopes, including sockets and mounting rotation. Halos may overlap.

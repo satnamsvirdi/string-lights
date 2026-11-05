@@ -10,6 +10,8 @@ import {
 const options: StringOptions = {
   shape: ['rice', 'flower'],
   colors: 'white',
+  pagePosition: 'absolute',
+  animated: true,
   patternOrder: 'cycle',
   patternSequence: ['blink', 'wave'],
 };

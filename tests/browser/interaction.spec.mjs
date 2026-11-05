@@ -37,7 +37,32 @@ test('mouse grabs the local attachment and releases into a decaying gravity swin
     y: window.held.transform.baseVal.getItem(0).matrix.f,
   }));
   expect(held.x).toBeGreaterThan(70);
+  await page.evaluate(() => {
+    const pose = () => {
+      const m = window.held.transform.baseVal.getItem(0).matrix;
+      return [m.e, m.f];
+    };
+    lights.element.addEventListener(
+      'pointerup',
+      () => {
+        window.releaseBefore = pose();
+      },
+      { capture: true, once: true },
+    );
+    lights.element.addEventListener(
+      'pointerup',
+      () => {
+        window.releaseAfter = pose();
+      },
+      { once: true },
+    );
+  });
   await page.mouse.up();
+  const release = await page.evaluate(() => ({
+    before: window.releaseBefore,
+    after: window.releaseAfter,
+  }));
+  expect(release.after).toEqual(release.before);
   const trace = await page.evaluate(async () => {
     const samples = [],
       start = performance.now();
@@ -48,7 +73,6 @@ test('mouse grabs the local attachment and releases into a decaying gravity swin
     }
     return samples;
   });
-  expect(Math.abs(trace[0].x - (held.x - 8))).toBeLessThan(12);
   expect(trace.some((point) => point.y > held.y + 10)).toBe(true);
   expect(trace.some((point) => point.x < -4)).toBe(true);
   expect(
@@ -97,6 +121,7 @@ test('quiet breeze waits without RAF and grabbing wakes it immediately', async (
     window.lights = createStringLights(document.getElementById('host'), {
       layout: 'roofline',
       breeze: true,
+      mode: 'static',
     });
   });
   await page.clock.runFor(15_000);

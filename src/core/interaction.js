@@ -1,5 +1,6 @@
 import { clamp } from './utils.js';
 import { createRope, ropeAttachment, releaseRope } from './physics.js';
+import { tether } from './tether.js';
 export function createInteraction(state) {
   const { svg, win, media } = state;
   function release(withMomentum = false) {
@@ -36,13 +37,13 @@ export function createInteraction(state) {
     const p = pointerPosition(event);
     if (!p) return;
     if (!strand.rope?.active) {
-      strand.rope = createRope(
-        strand.points.map((point) => ({
-          ...point,
-          x: point.x + strand.offset * point.mobility,
-          y: point.y + strand.offset * 0.12 * point.mobility,
-        })),
-      );
+      strand.rope = createRope(strand.points);
+      // Start at the current breeze pose, but keep the original cable lengths and supports.
+      strand.rope.nodes.forEach((node, i) => {
+        const shift = strand.offset * strand.points[i].mobility;
+        node.x = node.px = node.homeX + shift;
+        node.y = node.py = node.homeY + shift * 0.12;
+      });
     }
     if (!attachment) {
       let closest = Infinity;
@@ -105,20 +106,7 @@ export function createInteraction(state) {
       lengths[state.drag.segment] * state.drag.t;
     const total = lengths.reduce((a, b) => a + b, 0);
     // A taut cable resists the cursor instead of stretching into an impossible curve.
-    for (let i = 0; i < 12; i++)
-      for (const [anchor, radius] of [
-        [nodes[0], leftLength],
-        [nodes.at(-1), total - leftLength],
-      ]) {
-        if (!anchor.pinned) continue;
-        const dx = state.drag.x - anchor.homeX,
-          dy = state.drag.y - anchor.homeY,
-          distance = Math.hypot(dx, dy);
-        if (distance > radius) {
-          state.drag.x = anchor.homeX + (dx * radius) / distance;
-          state.drag.y = anchor.homeY + (dy * radius) / distance;
-        }
-      }
+    tether(state.drag, nodes[0], leftLength, nodes.at(-1), total - leftLength);
     const now = win.performance.now(),
       dx = state.drag.x - previousX,
       dy = state.drag.y - previousY;

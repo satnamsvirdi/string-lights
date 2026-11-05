@@ -2,7 +2,7 @@
 
 ## Current release gates
 
-`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 10 KB gzip, geometry-only imports approximately 2.5 KB, bulb preview approximately 3.4 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version.
+`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 11.8 KB gzip, geometry-only imports approximately 2.8 KB, bulb preview approximately 3.5 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version. Renderer/geometry budgets are now 12 KB/3 KB to cover the coupled cable solver, safeguarded near-taut constraints, terminal-wire clipping, and document-overlay measurement.
 
 Browser checks enforce that 300 equivalent option updates stay below a generous 500 ms CPU budget and make zero DOM mutations. They also cover a page of 12 decorations: only sections with a nonzero visible intersection animate, and scrolling resumes/pauses the appropriate instances. Separate tests assert zero animation-frame requests during quiet breeze periods, immediate wake on a grab, and complete offscreen suspension of frames, animation, and pattern timers. These behavioral gates are more stable than asserting a universal FPS on shared CI hardware.
 
@@ -16,6 +16,9 @@ The current implementation additionally:
 - Uses timers to sleep through quiet gust intervals and preserves the visible-time breeze phase across pauses.
 - Keeps material IDs unique across separate bundled copies and shares host-position ownership correctly.
 - Relies on element ResizeObserver notifications instead of adding a window resize listener for every component when that API is available.
+- Solves coupled cable-length constraints with a linear-time tridiagonal solve instead of allowing local constraint passes to stretch wide spans. Scratch arrays are reused per active rope. A 2,468px draped fixture that formerly drifted about 38px at rest now stays within 0.15px; repeated drags settle within 1px without a return tween.
+- Ends free wires at the final accepted bulb and removes empty dangling strands after overlap filtering.
+- Measures scrolling page overlays without counting their own height, including multiple layers and shrinking content.
 
 ## Historical before/after comparison
 

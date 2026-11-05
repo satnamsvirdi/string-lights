@@ -21,7 +21,8 @@ const defaults = /* @__PURE__ */ Object.freeze({
   layout: 'roofline',
   shape: 'rice',
   colors: 'multicolor',
-  mode: 'static',
+  mode: 'twinkle',
+  animated: true,
   spacing: 28,
   size: 1,
   sag: 48,
@@ -34,6 +35,7 @@ const defaults = /* @__PURE__ */ Object.freeze({
   interactive: true,
   seed: 7,
   paused: false,
+  pagePosition: 'fixed',
   patternOrder: 'fixed',
   patternInterval: 10,
   patternSequence: /* @__PURE__ */ Object.freeze(['blink', 'chase', 'wave', 'twinkle']),
@@ -49,6 +51,7 @@ export function normalizeOptions(input = {}) {
     ['layout', layouts],
     ['mode', modes],
     ['patternOrder', ['fixed', 'cycle', 'random']],
+    ['pagePosition', ['fixed', 'absolute']],
   ]) {
     if (!list.includes(o[key])) throw new TypeError(`Unknown ${key}: ${o[key]}`);
   }
@@ -89,7 +92,7 @@ export function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError('seed must be finite.');
-  for (const key of ['glitter', 'dimBase', 'breeze', 'interactive', 'paused']) {
+  for (const key of ['glitter', 'dimBase', 'breeze', 'interactive', 'paused', 'animated']) {
     if (typeof o[key] !== 'boolean') throw new TypeError(`${key} must be boolean.`);
   }
   return o;
