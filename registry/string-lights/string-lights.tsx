@@ -17,7 +17,7 @@ export function StringLights({ children, fullPage = false, options, className, s
         const element = host.current;
         if (!element)
             return;
-        const target = fullPage ? element.ownerDocument.body : element;
+        const target = fullPage ? element.ownerDocument.body : element.parentElement!;
         if (mountedTarget.current !== target || !controller.current) {
             controller.current?.destroy();
             controller.current = createStringLights(target, options);

@@ -8,7 +8,8 @@ export function dimensions({ page, options, win, host, doc }) {
     );
     return [host.clientWidth, height];
   }
-  if (options.pagePosition === 'fixed') return [win.innerWidth, win.innerHeight];
+  if (options.pagePosition === 'fixed')
+    return [doc.documentElement.clientWidth || win.innerWidth, win.innerHeight];
   const height = withoutOverlays(doc.querySelectorAll('svg[data-string-page="absolute"]'), () =>
     Math.max(win.innerHeight, doc.documentElement.scrollHeight, doc.body.scrollHeight),
   );

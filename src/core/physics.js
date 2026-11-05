@@ -54,7 +54,7 @@ function constrainLengths(rope, grab, predictor = false) {
     const lower = i ? -nodes[i].mass * (nx[i] * nx[i - 1] + ny[i] * ny[i - 1]) : 0;
     const diagonal = Math.max(
       1e-14,
-      nodes[i].mass + nodes[i + 1].mass + 1e-14 - lower * (upper[i - 1] || 0),
+      nodes[i].mass + nodes[i + 1].mass + (grab ? 0.01 : 1e-14) - lower * (upper[i - 1] || 0),
     );
     upper[i] =
       i + 1 < count ? (-nodes[i + 1].mass * (nx[i] * nx[i + 1] + ny[i] * ny[i + 1])) / diagonal : 0;
@@ -173,6 +173,12 @@ export function ropeAttachment(rope, segment, t) {
 /** One fixed simulation step; grab is a point along a segment, not a strand-wide offset. */
 export function stepRope(rope, dt, grab = null, wind = 0) {
   const { nodes } = rope;
+  if (grab) {
+    const p = ropeAttachment(rope, grab.segment, grab.t);
+    const distance = Math.hypot(grab.x - p.x, grab.y - p.y);
+    const scale = Math.min(1, (300 * dt) / Math.max(distance, 1e-12));
+    grab = { ...grab, x: p.x + (grab.x - p.x) * scale, y: p.y + (grab.y - p.y) * scale };
+  }
   if (TAUT.has(rope)) {
     for (const p of nodes) {
       p.x = p.px = p.homeX;
@@ -187,7 +193,7 @@ export function stepRope(rope, dt, grab = null, wind = 0) {
       continue;
     }
     const speed = Math.hypot(p.x - p.px, p.y - p.py) / dt;
-    const damping = Math.exp(-(0.5 + 0.0015 * speed) * dt);
+    const damping = Math.exp(-((grab ? 12 : 0.8) + 0.0015 * speed) * dt);
     const vx = (p.x - p.px) * damping,
       vy = (p.y - p.py) * damping;
     p.px = p.x;

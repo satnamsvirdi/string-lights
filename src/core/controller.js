@@ -19,6 +19,7 @@ const liveKeys = new Set([
   'breeze',
   'wind',
   'animated',
+  'collisions',
 ]);
 
 function retainHost(host, win) {

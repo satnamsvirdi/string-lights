@@ -1,5 +1,41 @@
 import { test, expect } from '@playwright/test';
 
+test('React decorations cover scrolled content and page overlays do not add horizontal overflow', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.addScriptTag({ url: '/react.js', type: 'module' });
+  await expect(page.locator('[data-string]')).toHaveCount(1);
+  await page.evaluate(() => {
+    const host = document.querySelector('[data-string]').parentElement;
+    Object.assign(host.style, { overflow: 'auto', height: '300px' });
+    const content = document.createElement('div');
+    content.style.height = '1200px';
+    host.append(content);
+    host.scrollTop = 450;
+  });
+  await expect
+    .poll(() => page.locator('[data-string]').evaluate((svg) => svg.viewBox.baseVal.height))
+    .toBeGreaterThanOrEqual(1200);
+  await page.evaluate(() => window.unmount());
+  for (const pagePosition of ['fixed', 'absolute']) {
+    expect(
+      await page.evaluate(async (pagePosition) => {
+        document.body.style.minHeight = '1800px';
+        const { createStringLights } = await import('/core.js');
+        const lights = createStringLights(document.body, {
+          pagePosition,
+          animated: false,
+          breeze: false,
+        });
+        const fits = document.documentElement.scrollWidth <= document.documentElement.clientWidth;
+        lights.destroy();
+        return fits;
+      }, pagePosition),
+    ).toBe(true);
+  }
+});
+
 test('scroll containers keep their lights through the middle and bottom of the content', async ({
   page,
 }) => {

@@ -33,6 +33,7 @@ const defaults = /* @__PURE__ */ Object.freeze({
   breeze: true,
   wind: 1,
   interactive: true,
+  collisions: true,
   seed: 7,
   paused: false,
   pagePosition: 'fixed',
@@ -92,7 +93,15 @@ export function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError('seed must be finite.');
-  for (const key of ['glitter', 'dimBase', 'breeze', 'interactive', 'paused', 'animated']) {
+  for (const key of [
+    'glitter',
+    'dimBase',
+    'breeze',
+    'interactive',
+    'paused',
+    'animated',
+    'collisions',
+  ]) {
     if (typeof o[key] !== 'boolean') throw new TypeError(`${key} must be boolean.`);
   }
   return o;

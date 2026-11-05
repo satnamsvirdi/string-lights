@@ -9,6 +9,37 @@ import {
 } from '../../src/core/index.js';
 import { tether } from '../../src/core/tether.js';
 
+test('a held drape near maximum reach settles without numerical shaking', () => {
+  const rope = createRope(createGeometry(1400, 400, { layout: 'draped' }).wires[1]);
+  const segment = 10,
+    t = 0.5,
+    home = ropeAttachment(rope, segment, t);
+  const grab = { segment, t, x: home.x, y: home.y + 150 };
+  const left =
+    rope.lengths.slice(0, segment).reduce((a, b) => a + b, 0) + rope.lengths[segment] * t;
+  tether(
+    grab,
+    rope.nodes[0],
+    left,
+    rope.nodes.at(-1),
+    rope.lengths.reduce((a, b) => a + b, 0) - left,
+  );
+  grab.x += (home.x - grab.x) * 0.002;
+  grab.y += (home.y - grab.y) * 0.002;
+  let previous,
+    movement = 0;
+  for (let i = 0; i < 600; i++) {
+    stepRope(rope, 1 / 120, grab);
+    if (i > 480 && previous)
+      movement = Math.max(
+        movement,
+        ...rope.nodes.map((n, j) => Math.hypot(n.x - previous[j].x, n.y - previous[j].y)),
+      );
+    previous = rope.nodes.map((n) => ({ x: n.x, y: n.y }));
+  }
+  assert.ok(movement < 0.1, `held rope movement: ${movement}`);
+});
+
 test('near-taut and straight cables stay within their physical support reach', () => {
   for (const sag of [0, 0.1, 3]) {
     const rope = createRope(createGeometry(3000, 500, { sag }).wires[1]);

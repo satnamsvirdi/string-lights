@@ -107,6 +107,13 @@ export function createInteraction(state) {
     const total = lengths.reduce((a, b) => a + b, 0);
     // A taut cable resists the cursor instead of stretching into an impossible curve.
     tether(state.drag, nodes[0], leftLength, nodes.at(-1), total - leftLength);
+    // Leave a little slack at maximum reach so the held constraint never becomes singular.
+    const homeA = nodes[state.drag.segment],
+      homeB = nodes[state.drag.segment + 1];
+    state.drag.x +=
+      (homeA.homeX + (homeB.homeX - homeA.homeX) * state.drag.t - state.drag.x) * 0.002;
+    state.drag.y +=
+      (homeA.homeY + (homeB.homeY - homeA.homeY) * state.drag.t - state.drag.y) * 0.002;
     const now = win.performance.now(),
       dx = state.drag.x - previousX,
       dy = state.drag.y - previousY;

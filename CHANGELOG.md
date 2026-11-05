@@ -2,6 +2,9 @@
 
 ## 0.2.0
 
+- Honor sag on border and curtain headers, damp held ropes, and keep slight slack at maximum pointer reach to avoid singular tension.
+- Add default-on soft strand contact; set `collisions: false` to disable it.
+- Measure React scroll containers directly and exclude browser scrollbars from fixed page overlay width.
 - Size decorations to scrollable container content so lights remain visible after scrolling; exclude overlays when measuring shrinking content.
 - Subtle twinkle is now the default; `animated` turns lighting on/off without losing its pattern or rebuilding the string.
 - Add `pagePosition: 'absolute'` for document overlays that scroll and resize with page content; fixed overlays remain supported.

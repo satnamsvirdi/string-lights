@@ -79,7 +79,7 @@ export function createGeometry(width, height, input = {}) {
   if (o.layout === 'roofline') swag(12);
   if (o.layout === 'draped') for (let row = 0; row < 3; row++) swag(12 + row * 38, 3, o.sag * 0.65);
   if (o.layout === 'curtain') {
-    swag(12, 2, 3);
+    swag(12, 2, o.sag);
     // Attach drops midway between the bulbs that actually fit on the header.
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
@@ -105,7 +105,7 @@ export function createGeometry(width, height, input = {}) {
     }
   }
   if (o.layout === 'border') {
-    swag(12, 2, 8);
+    swag(12, 2, o.sag);
     for (const x of [8, width - 8]) {
       const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil((height + 40) / 12)));
       add(

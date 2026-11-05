@@ -45,6 +45,7 @@ var defaults = /* @__PURE__ */ Object.freeze({
   breeze: true,
   wind: 1,
   interactive: true,
+  collisions: true,
   seed: 7,
   paused: false,
   pagePosition: "fixed",
@@ -95,7 +96,15 @@ function normalizeOptions(input = {}) {
     o[key] = clamp(o[key], min, max);
   }
   if (!Number.isFinite(o.seed)) throw new TypeError("seed must be finite.");
-  for (const key of ["glitter", "dimBase", "breeze", "interactive", "paused", "animated"]) {
+  for (const key of [
+    "glitter",
+    "dimBase",
+    "breeze",
+    "interactive",
+    "paused",
+    "animated",
+    "collisions"
+  ]) {
     if (typeof o[key] !== "boolean") throw new TypeError(`${key} must be boolean.`);
   }
   return o;
@@ -278,7 +287,7 @@ function createGeometry(width, height, input = {}) {
   if (o.layout === "roofline") swag(12);
   if (o.layout === "draped") for (let row = 0; row < 3; row++) swag(12 + row * 38, 3, o.sag * 0.65);
   if (o.layout === "curtain") {
-    swag(12, 2, 3);
+    swag(12, 2, o.sag);
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
     for (let i = 0; i + 1 < headerBulbs.length; i += 2) {
@@ -302,7 +311,7 @@ function createGeometry(width, height, input = {}) {
     }
   }
   if (o.layout === "border") {
-    swag(12, 2, 8);
+    swag(12, 2, o.sag);
     for (const x of [8, width - 8]) {
       const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil((height + 40) / 12)));
       add(
@@ -496,7 +505,7 @@ function constrainLengths(rope, grab, predictor = false) {
     const lower = i ? -nodes[i].mass * (nx[i] * nx[i - 1] + ny[i] * ny[i - 1]) : 0;
     const diagonal = Math.max(
       1e-14,
-      nodes[i].mass + nodes[i + 1].mass + 1e-14 - lower * (upper[i - 1] || 0)
+      nodes[i].mass + nodes[i + 1].mass + (grab ? 0.01 : 1e-14) - lower * (upper[i - 1] || 0)
     );
     upper[i] = i + 1 < count ? -nodes[i + 1].mass * (nx[i] * nx[i + 1] + ny[i] * ny[i + 1]) / diagonal : 0;
     rhs[i] = (rhs[i] - lower * (rhs[i - 1] || 0)) / diagonal;
@@ -589,6 +598,12 @@ function ropeAttachment(rope, segment, t) {
 }
 function stepRope(rope, dt, grab = null, wind = 0) {
   const { nodes } = rope;
+  if (grab) {
+    const p = ropeAttachment(rope, grab.segment, grab.t);
+    const distance = Math.hypot(grab.x - p.x, grab.y - p.y);
+    const scale = Math.min(1, 300 * dt / Math.max(distance, 1e-12));
+    grab = { ...grab, x: p.x + (grab.x - p.x) * scale, y: p.y + (grab.y - p.y) * scale };
+  }
   if (TAUT.has(rope)) {
     for (const p of nodes) {
       p.x = p.px = p.homeX;
@@ -603,7 +618,7 @@ function stepRope(rope, dt, grab = null, wind = 0) {
       continue;
     }
     const speed = Math.hypot(p.x - p.px, p.y - p.py) / dt;
-    const damping = Math.exp(-(0.5 + 15e-4 * speed) * dt);
+    const damping = Math.exp(-((grab ? 12 : 0.8) + 15e-4 * speed) * dt);
     const vx = (p.x - p.px) * damping, vy = (p.y - p.py) * damping;
     p.px = p.x;
     p.py = p.y;
@@ -720,6 +735,9 @@ function createInteraction(state) {
     const leftLength = lengths.slice(0, state.drag.segment).reduce((a, b) => a + b, 0) + lengths[state.drag.segment] * state.drag.t;
     const total = lengths.reduce((a, b) => a + b, 0);
     tether(state.drag, nodes[0], leftLength, nodes.at(-1), total - leftLength);
+    const homeA = nodes[state.drag.segment], homeB = nodes[state.drag.segment + 1];
+    state.drag.x += (homeA.homeX + (homeB.homeX - homeA.homeX) * state.drag.t - state.drag.x) * 2e-3;
+    state.drag.y += (homeA.homeY + (homeB.homeY - homeA.homeY) * state.drag.t - state.drag.y) * 2e-3;
     const now = win.performance.now(), dx = state.drag.x - previousX, dy = state.drag.y - previousY;
     if (Math.hypot(dx, dy) > 0.01) {
       const dt = clamp((now - state.drag.sampleTime) / 1e3, 1 / 240, 0.1);
@@ -900,6 +918,56 @@ function pathFor(points, displacement = 0, dx = 0, dy = 0) {
   return d;
 }
 
+// src/core/collisions.js
+function collideStrands(strands, held, dt) {
+  const cells = /* @__PURE__ */ new Map();
+  const moving = strands.filter((s) => s.rope?.active && !s.rope.sleeping);
+  if (!moving.length) return;
+  for (const strand of strands) {
+    const points = strand.rope?.active ? strand.rope.nodes : strand.points;
+    for (let index = 0; index < points.length; index++) {
+      const p = points[index];
+      const key = `${Math.floor(p.x / 12)},${Math.floor(p.y / 12)}`;
+      if (!cells.has(key)) cells.set(key, []);
+      cells.get(key).push({ strand, index, p });
+    }
+  }
+  for (const strand of moving) {
+    for (const p of strand.rope.nodes) {
+      if (p.pinned) continue;
+      const cx = Math.floor(p.x / 12), cy = Math.floor(p.y / 12);
+      for (let x = cx - 1; x <= cx + 1; x++)
+        for (let y = cy - 1; y <= cy + 1; y++) {
+          for (const other of cells.get(`${x},${y}`) || []) {
+            if (other.strand === strand) continue;
+            const dx = p.x - other.p.x, dy = p.y - other.p.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance >= 8 || distance < 1e-6) continue;
+            const original = other.strand.points[other.index];
+            if (Math.hypot(p.homeX - original.x, p.homeY - original.y) < 12) continue;
+            if (!other.strand.rope?.active) {
+              const rope = createRope(other.strand.points);
+              rope.active = true;
+              other.strand.rope = rope;
+            }
+            const q = other.strand.rope.nodes[other.index];
+            const impulse = Math.min(0.08, (8 - distance) * dt * 2);
+            if (strand !== held) {
+              p.px -= dx / distance * impulse;
+              p.py -= dy / distance * impulse;
+            }
+            if (!q.pinned && other.strand !== held) {
+              q.px += dx / distance * impulse;
+              q.py += dy / distance * impulse;
+              other.strand.rope.sleeping = false;
+              other.strand.rope.quietTime = 0;
+            }
+          }
+        }
+    }
+  }
+}
+
 // src/core/motion.js
 function createMotion(state) {
   const { win, media } = state;
@@ -937,6 +1005,7 @@ function createMotion(state) {
     const dt = Math.min(elapsed, 0.1);
     lastTime = now;
     windTime += elapsed;
+    if (state.options.collisions) collideStrands(state.strands, state.drag?.strand, dt);
     for (const [i, strand] of state.strands.entries()) {
       if (strand.rope?.active) {
         const held = state.drag?.strand === strand, wind = state.options.breeze ? breezeForce(windTime, i) * state.options.wind * 12 : 0;
@@ -1398,7 +1467,8 @@ function dimensions({ page, options, win, host, doc }) {
     );
     return [host.clientWidth, height2];
   }
-  if (options.pagePosition === "fixed") return [win.innerWidth, win.innerHeight];
+  if (options.pagePosition === "fixed")
+    return [doc.documentElement.clientWidth || win.innerWidth, win.innerHeight];
   const height = withoutOverlays(
     doc.querySelectorAll('svg[data-string-page="absolute"]'),
     () => Math.max(win.innerHeight, doc.documentElement.scrollHeight, doc.body.scrollHeight)
@@ -1515,7 +1585,8 @@ var liveKeys = /* @__PURE__ */ new Set([
   "paused",
   "breeze",
   "wind",
-  "animated"
+  "animated",
+  "collisions"
 ]);
 function retainHost(host, win) {
   let record = host[hostRecordKey];

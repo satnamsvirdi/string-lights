@@ -3,6 +3,7 @@ import { breezeForce, breezeWait } from './breeze.js';
 import { PHYSICS_STEP, stepRope, ropeAttachment } from './physics.js';
 import { clamp } from './utils.js';
 import { pathFor } from './paths.js';
+import { collideStrands } from './collisions.js';
 export function createMotion(state) {
   const { win, media } = state;
   let frame = 0,
@@ -48,6 +49,7 @@ export function createMotion(state) {
     const dt = Math.min(elapsed, 0.1);
     lastTime = now;
     windTime += elapsed;
+    if (state.options.collisions) collideStrands(state.strands, state.drag?.strand, dt);
     // Untouched strands use a small breeze sway; grabbed strands use local rope dynamics.
     for (const [i, strand] of state.strands.entries()) {
       if (strand.rope?.active) {

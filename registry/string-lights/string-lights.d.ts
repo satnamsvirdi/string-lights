@@ -19,6 +19,8 @@ export interface StringOptions {
   breeze?: boolean;
   wind?: number;
   interactive?: boolean;
+  /** Gentle contact between strands in this instance. Default true. */
+  collisions?: boolean;
   seed?: number;
   paused?: boolean;
   /** Body/document overlays: fixed to the viewport, or absolute and scrolling with the document. */

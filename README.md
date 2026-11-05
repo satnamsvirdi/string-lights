@@ -1,5 +1,7 @@
 # String Lights
 
+Strands respond softly to contact by default. Set `collisions: false` to disable contact within an instance. Border and curtain headers honor `sag`. Scrollable component decorations cover their content; fixed page decorations fit the viewport without including its scrollbar.
+
 Decorative festival, Christmas, and Diwali string lights for JavaScript and React. Glass bulbs, white and multicolor palettes, eight presets, independent lighting programs, and strings you can grab and release into a gravity-driven swing.
 
 The core has no runtime dependencies. Both packages are ESM with TypeScript declarations and tree shaking. React 18 and 19 are supported. Offscreen decorations pause, reduced motion produces steady lights, and equivalent options preserve the existing SVG and animations.
