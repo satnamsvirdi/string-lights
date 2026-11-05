@@ -173,12 +173,7 @@ export function ropeAttachment(rope, segment, t) {
 /** One fixed simulation step; grab is a point along a segment, not a strand-wide offset. */
 export function stepRope(rope, dt, grab = null, wind = 0, supportHeld = false) {
   const { nodes } = rope;
-  if (grab) {
-    const p = ropeAttachment(rope, grab.segment, grab.t);
-    const distance = Math.hypot(grab.x - p.x, grab.y - p.y);
-    const scale = Math.min(1, (300 * dt) / Math.max(distance, 1e-12));
-    grab = { ...grab, x: p.x + (grab.x - p.x) * scale, y: p.y + (grab.y - p.y) * scale };
-  }
+  // The hand is a positional constraint. Tethering limits its reach, not its speed.
   if (TAUT.has(rope)) {
     for (const p of nodes) {
       p.x = p.px = p.homeX;

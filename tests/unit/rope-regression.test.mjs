@@ -9,6 +9,22 @@ import {
 } from '../../src/core/index.js';
 import { tether } from '../../src/core/tether.js';
 
+test('a held header follows a quick downward reversal without a drag speed limit', () => {
+  const rope = createRope(createGeometry(800, 400, { layout: 'curtain' }).wires[1]);
+  const segment = Math.floor(rope.lengths.length / 2),
+    t = 0.5;
+  const home = ropeAttachment(rope, segment, t);
+  const grab = { segment, t, x: home.x, y: home.y - 32 };
+  for (let i = 0; i < 120; i++) stepRope(rope, 1 / 120, grab);
+  let worst = 0;
+  for (let frame = 1; frame <= 4; frame++) {
+    grab.y = home.y - 32 + frame * 8;
+    for (let step = 0; step < 2; step++) stepRope(rope, 1 / 120, grab);
+    worst = Math.max(worst, Math.abs(ropeAttachment(rope, segment, t).y - grab.y));
+  }
+  assert.ok(worst < 0.5, `downward held-pointer lag: ${worst}px`);
+});
+
 test('a held drape near maximum reach settles without numerical shaking', () => {
   const rope = createRope(createGeometry(1400, 400, { layout: 'draped' }).wires[1]);
   const segment = 10,

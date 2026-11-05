@@ -607,12 +607,6 @@ function ropeAttachment(rope, segment, t) {
 }
 function stepRope(rope, dt, grab = null, wind = 0, supportHeld = false) {
   const { nodes } = rope;
-  if (grab) {
-    const p = ropeAttachment(rope, grab.segment, grab.t);
-    const distance = Math.hypot(grab.x - p.x, grab.y - p.y);
-    const scale = Math.min(1, 300 * dt / Math.max(distance, 1e-12));
-    grab = { ...grab, x: p.x + (grab.x - p.x) * scale, y: p.y + (grab.y - p.y) * scale };
-  }
   if (TAUT.has(rope)) {
     for (const p of nodes) {
       p.x = p.px = p.homeX;
