@@ -171,7 +171,7 @@ export function ropeAttachment(rope, segment, t) {
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 /** One fixed simulation step; grab is a point along a segment, not a strand-wide offset. */
-export function stepRope(rope, dt, grab = null, wind = 0) {
+export function stepRope(rope, dt, grab = null, wind = 0, supportHeld = false) {
   const { nodes } = rope;
   if (grab) {
     const p = ropeAttachment(rope, grab.segment, grab.t);
@@ -188,12 +188,14 @@ export function stepRope(rope, dt, grab = null, wind = 0) {
   }
   for (const p of nodes) {
     if (p.pinned) {
+      p.px = p.x;
+      p.py = p.y;
       p.x = p.homeX;
       p.y = p.homeY;
       continue;
     }
     const speed = Math.hypot(p.x - p.px, p.y - p.py) / dt;
-    const damping = Math.exp(-((grab ? 12 : 0.8) + 0.0015 * speed) * dt);
+    const damping = Math.exp(-((grab || supportHeld ? 12 : 0.8) + 0.0015 * speed) * dt);
     const vx = (p.x - p.px) * damping,
       vy = (p.y - p.py) * damping;
     p.px = p.x;

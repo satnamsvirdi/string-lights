@@ -79,7 +79,9 @@ export function createMotion(state) {
         }
         strand.rope.accumulator += dt;
         while (strand.rope.accumulator >= PHYSICS_STEP) {
-          stepRope(strand.rope, PHYSICS_STEP, held ? state.drag : null, wind);
+          const joint = strand.points[0].attachment;
+          const supportHeld = joint && state.drag?.strand === state.strands[joint.wire];
+          stepRope(strand.rope, PHYSICS_STEP, held ? state.drag : null, wind, supportHeld);
           strand.rope.accumulator -= PHYSICS_STEP;
         }
         let speed = 0;

@@ -605,7 +605,7 @@ function ropeAttachment(rope, segment, t) {
   const a = rope.nodes[segment], b = rope.nodes[segment + 1];
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
-function stepRope(rope, dt, grab = null, wind = 0) {
+function stepRope(rope, dt, grab = null, wind = 0, supportHeld = false) {
   const { nodes } = rope;
   if (grab) {
     const p = ropeAttachment(rope, grab.segment, grab.t);
@@ -622,12 +622,14 @@ function stepRope(rope, dt, grab = null, wind = 0) {
   }
   for (const p of nodes) {
     if (p.pinned) {
+      p.px = p.x;
+      p.py = p.y;
       p.x = p.homeX;
       p.y = p.homeY;
       continue;
     }
     const speed = Math.hypot(p.x - p.px, p.y - p.py) / dt;
-    const damping = Math.exp(-((grab ? 12 : 0.8) + 15e-4 * speed) * dt);
+    const damping = Math.exp(-((grab || supportHeld ? 12 : 0.8) + 15e-4 * speed) * dt);
     const vx = (p.x - p.px) * damping, vy = (p.y - p.py) * damping;
     p.px = p.x;
     p.py = p.y;
@@ -686,8 +688,8 @@ function followAttachment(strand, strands) {
       strand.rope.sleeping = false;
       strand.rope.quietTime = 0;
     }
-    root.x = root.homeX = point.x;
-    root.y = root.homeY = point.y;
+    root.homeX = point.x;
+    root.homeY = point.y;
   }
 }
 
@@ -1067,7 +1069,9 @@ function createMotion(state) {
         }
         strand.rope.accumulator += dt;
         while (strand.rope.accumulator >= PHYSICS_STEP) {
-          stepRope(strand.rope, PHYSICS_STEP, held ? state.drag : null, wind);
+          const joint = strand.points[0].attachment;
+          const supportHeld = joint && state.drag?.strand === state.strands[joint.wire];
+          stepRope(strand.rope, PHYSICS_STEP, held ? state.drag : null, wind, supportHeld);
           strand.rope.accumulator -= PHYSICS_STEP;
         }
         let speed = 0;

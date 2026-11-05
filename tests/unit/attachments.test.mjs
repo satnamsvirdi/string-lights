@@ -41,3 +41,38 @@ test('breeze ties move even before either strand has been dragged', () => {
   followAttachment(drop, strands);
   assert.ok(Math.abs(drop.rope.nodes[0].x - drop.points[0].x - drop.anchorX) < 1e-8);
 });
+
+test('a small header pull does not amplify into a whipping drop while held', () => {
+  const strands = createGeometry(800, 400, { layout: 'curtain' }).wires.map((points) => ({
+    points,
+    offset: 0,
+  }));
+  const drop = strands.find((s) => s.points[0].attachment && s.points[0].x > 300);
+  const joint = drop.points[0].attachment,
+    parent = strands[joint.wire];
+  activateStrand(parent);
+  const base = ropeAttachment(parent.rope, joint.segment, joint.t);
+  let displacement = 0;
+  for (let frame = 0; frame < 120; frame++) {
+    const progress = Math.min(frame / 20, 1);
+    const grab = {
+      segment: joint.segment,
+      t: joint.t,
+      x: base.x - 12 * progress,
+      y: base.y - 20 * progress,
+    };
+    for (let step = 0; step < 2; step++) stepRope(parent.rope, 1 / 120, grab);
+    followAttachment(drop, strands);
+    for (let step = 0; step < 2; step++) stepRope(drop.rope, 1 / 120, null, 0, true);
+    displacement = Math.max(displacement, ...drop.rope.nodes.map((n) => Math.abs(n.x - n.homeX)));
+    assert.equal(drop.rope.nodes[0].px, drop.rope.nodes[0].x);
+  }
+  assert.ok(displacement < 14, `12px pull produced ${displacement}px displacement`);
+  const normal = globalThis.structuredClone(drop.rope),
+    explicit = globalThis.structuredClone(drop.rope);
+  for (let step = 0; step < 240; step++) {
+    stepRope(normal, 1 / 120);
+    stepRope(explicit, 1 / 120, null, 0, false);
+  }
+  assert.deepEqual(normal.nodes, explicit.nodes, 'release uses the existing free motion path');
+});

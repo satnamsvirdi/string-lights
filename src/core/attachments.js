@@ -37,7 +37,7 @@ export function followAttachment(strand, strands) {
       strand.rope.sleeping = false;
       strand.rope.quietTime = 0;
     }
-    root.x = root.homeX = point.x;
-    root.y = root.homeY = point.y;
+    root.homeX = point.x;
+    root.homeY = point.y;
   }
 }

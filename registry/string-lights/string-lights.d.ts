@@ -124,6 +124,8 @@ export declare function stepRope(
   dt: number,
   grab?: RopeGrab | null,
   wind?: number,
+  /** Apply held damping to a rope carried by a grabbed support. */
+  supportHeld?: boolean,
 ): void;
 export declare function releaseRope(
   rope: StringRope,

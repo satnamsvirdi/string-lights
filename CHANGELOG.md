@@ -2,6 +2,7 @@
 
 ## 0.2.0
 
+- Prevent small header pulls from whipping attached drops: track moving support history correctly and apply held damping only until the pointer releases.
 - Keep curtain drops tied to their header during drag, release, and breeze; move their pinned roots with the actual header attachment.
 - Honor sag on border and curtain headers, damp held ropes, and keep slight slack at maximum pointer reach to avoid singular tension.
 - Add default-on soft strand contact; set `collisions: false` to disable it.
