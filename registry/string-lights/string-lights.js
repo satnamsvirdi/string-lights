@@ -303,7 +303,14 @@ function createGeometry(width, height, input = {}) {
         Array.from({ length: n + 1 }, (_, j) => ({
           x,
           y: y + length * j / n,
-          mobility: (j / n) ** 2
+          mobility: (j / n) ** 2,
+          ...j === 0 ? {
+            attachment: {
+              wire: headerWires.indexOf(header),
+              segment: segment - 1,
+              t: (x - a.x) / (b.x - a.x)
+            }
+          } : {}
         })),
         0,
         true
@@ -361,6 +368,8 @@ function createGeometry(width, height, input = {}) {
     return true;
   });
   for (const bulb of accepted) bulb.wire = indices.get(bulb.wire);
+  for (const wire of visibleWires)
+    if (wire[0].attachment) wire[0].attachment.wire = indices.get(wire[0].attachment.wire);
   return { wires: visibleWires, bulbs: accepted };
 }
 function clearBulbOverlaps(bulbs, o) {
@@ -645,6 +654,43 @@ function releaseRope(rope, grab, velocity) {
   rope.quietTime = 0;
 }
 
+// src/core/attachments.js
+function activateStrand(strand) {
+  if (strand.rope?.active) return;
+  const rope = createRope(strand.points);
+  for (const [i, node] of rope.nodes.entries()) {
+    const shift = (strand.offset || 0) * strand.points[i].mobility;
+    node.x = node.px = node.homeX + shift + (strand.anchorX || 0);
+    node.y = node.py = node.homeY + shift * 0.12 + (strand.anchorY || 0);
+  }
+  rope.active = true;
+  strand.rope = rope;
+}
+function followAttachment(strand, strands) {
+  const joint = strand.points[0].attachment;
+  if (!joint) return;
+  const parent = strands[joint.wire];
+  const a = parent.points[joint.segment], b = parent.points[joint.segment + 1];
+  const mobility = a.mobility + (b.mobility - a.mobility) * joint.t;
+  const shift = parent.offset * mobility;
+  const point = parent.rope?.active ? ropeAttachment(parent.rope, joint.segment, joint.t) : {
+    x: a.x + (b.x - a.x) * joint.t + shift,
+    y: a.y + (b.y - a.y) * joint.t + shift * 0.12
+  };
+  if (parent.rope?.active) activateStrand(strand);
+  strand.anchorX = point.x - strand.points[0].x;
+  strand.anchorY = point.y - strand.points[0].y;
+  if (strand.rope?.active) {
+    const root = strand.rope.nodes[0];
+    if (Math.hypot(root.homeX - point.x, root.homeY - point.y) > 1e-8) {
+      strand.rope.sleeping = false;
+      strand.rope.quietTime = 0;
+    }
+    root.x = root.homeX = point.x;
+    root.y = root.homeY = point.y;
+  }
+}
+
 // src/core/interaction.js
 function createInteraction(state) {
   const { svg, win, media } = state;
@@ -672,14 +718,8 @@ function createInteraction(state) {
       return;
     const p = pointerPosition(event);
     if (!p) return;
-    if (!strand.rope?.active) {
-      strand.rope = createRope(strand.points);
-      strand.rope.nodes.forEach((node, i) => {
-        const shift = strand.offset * strand.points[i].mobility;
-        node.x = node.px = node.homeX + shift;
-        node.y = node.py = node.homeY + shift * 0.12;
-      });
-    }
+    activateStrand(strand);
+    followAttachment(strand, state.strands);
     if (!attachment) {
       let closest = Infinity;
       strand.rope.nodes.slice(0, -1).forEach((a, segment2) => {
@@ -945,11 +985,7 @@ function collideStrands(strands, held, dt) {
             if (distance >= 8 || distance < 1e-6) continue;
             const original = other.strand.points[other.index];
             if (Math.hypot(p.homeX - original.x, p.homeY - original.y) < 12) continue;
-            if (!other.strand.rope?.active) {
-              const rope = createRope(other.strand.points);
-              rope.active = true;
-              other.strand.rope = rope;
-            }
+            activateStrand(other.strand);
             const q = other.strand.rope.nodes[other.index];
             const impulse = Math.min(0.08, (8 - distance) * dt * 2);
             if (strand !== held) {
@@ -1007,6 +1043,18 @@ function createMotion(state) {
     windTime += elapsed;
     if (state.options.collisions) collideStrands(state.strands, state.drag?.strand, dt);
     for (const [i, strand] of state.strands.entries()) {
+      const oldX = strand.anchorX || 0, oldY = strand.anchorY || 0;
+      followAttachment(strand, state.strands);
+      const anchorMoved = oldX !== (strand.anchorX || 0) || oldY !== (strand.anchorY || 0);
+      if (anchorMoved || strand.rope?.active && strand.anchorTransformed) {
+        strand.paths.forEach(
+          (p) => p.setAttribute(
+            "transform",
+            strand.rope?.active ? "" : `translate(${strand.anchorX || 0} ${strand.anchorY || 0})`
+          )
+        );
+        strand.anchorTransformed = !strand.rope?.active;
+      }
       if (strand.rope?.active) {
         const held = state.drag?.strand === strand, wind = state.options.breeze ? breezeForce(windTime, i) * state.options.wind * 12 : 0;
         if (held || Math.abs(wind) > 0.01) {
@@ -1035,7 +1083,7 @@ function createMotion(state) {
       const force = state.options.breeze ? breezeForce(windTime, i) * state.options.wind * 13 : 0;
       strand.velocity += (force - 5 * strand.offset - 3.6 * strand.velocity) * dt;
       strand.offset += strand.velocity * dt;
-      strand.changed = Math.abs(strand.offset) + Math.abs(strand.velocity) > 2e-3 || strand.dirty;
+      strand.changed = anchorMoved || Math.abs(strand.offset) + Math.abs(strand.velocity) > 2e-3 || strand.dirty;
       if (strand.changed) {
         const d = pathFor(strand.points, strand.offset);
         strand.paths.forEach((p) => p.setAttribute("d", d));
@@ -1045,7 +1093,10 @@ function createMotion(state) {
     for (const { node, bulb } of state.bulbs) {
       const strand = state.strands[bulb.wire], shift = strand.offset * bulb.mobility;
       if (!strand.changed) continue;
-      const point = strand.rope?.active ? ropeAttachment(strand.rope, bulb.segment, bulb.t) : { x: bulb.x + shift, y: bulb.y + shift * 0.12 };
+      const point = strand.rope?.active ? ropeAttachment(strand.rope, bulb.segment, bulb.t) : {
+        x: bulb.x + shift + (strand.anchorX || 0),
+        y: bulb.y + shift * 0.12 + (strand.anchorY || 0)
+      };
       let angle = bulb.angle;
       if (strand.rope?.active && bulb.angle) {
         const a = strand.rope.nodes[bulb.segment], b = strand.rope.nodes[bulb.segment + 1];

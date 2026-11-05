@@ -1,5 +1,6 @@
 import { clamp } from './utils.js';
-import { createRope, ropeAttachment, releaseRope } from './physics.js';
+import { ropeAttachment, releaseRope } from './physics.js';
+import { activateStrand, followAttachment } from './attachments.js';
 import { tether } from './tether.js';
 export function createInteraction(state) {
   const { svg, win, media } = state;
@@ -36,15 +37,9 @@ export function createInteraction(state) {
       return;
     const p = pointerPosition(event);
     if (!p) return;
-    if (!strand.rope?.active) {
-      strand.rope = createRope(strand.points);
-      // Start at the current breeze pose, but keep the original cable lengths and supports.
-      strand.rope.nodes.forEach((node, i) => {
-        const shift = strand.offset * strand.points[i].mobility;
-        node.x = node.px = node.homeX + shift;
-        node.y = node.py = node.homeY + shift * 0.12;
-      });
-    }
+    // Start at the current breeze pose, but keep the original cable lengths and supports.
+    activateStrand(strand);
+    followAttachment(strand, state.strands);
     if (!attachment) {
       let closest = Infinity;
       strand.rope.nodes.slice(0, -1).forEach((a, segment) => {

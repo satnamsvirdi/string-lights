@@ -1,4 +1,4 @@
-import { createRope } from './physics.js';
+import { activateStrand } from './attachments.js';
 
 /** Soft, inelastic strand contact. No bounce or positional teleporting. */
 export function collideStrands(strands, held, dt) {
@@ -31,11 +31,7 @@ export function collideStrands(strands, held, dt) {
             const original = other.strand.points[other.index];
             // Shared supports and designed junctions are connections, not collisions.
             if (Math.hypot(p.homeX - original.x, p.homeY - original.y) < 12) continue;
-            if (!other.strand.rope?.active) {
-              const rope = createRope(other.strand.points);
-              rope.active = true;
-              other.strand.rope = rope;
-            }
+            activateStrand(other.strand);
             const q = other.strand.rope.nodes[other.index];
             const impulse = Math.min(0.08, (8 - distance) * dt * 2);
             if (strand !== held) {

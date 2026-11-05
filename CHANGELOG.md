@@ -2,6 +2,7 @@
 
 ## 0.2.0
 
+- Keep curtain drops tied to their header during drag, release, and breeze; move their pinned roots with the actual header attachment.
 - Honor sag on border and curtain headers, damp held ropes, and keep slight slack at maximum pointer reach to avoid singular tension.
 - Add default-on soft strand contact; set `collisions: false` to disable it.
 - Measure React scroll containers directly and exclude browser scrollbars from fixed page overlay width.

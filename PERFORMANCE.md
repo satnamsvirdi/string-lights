@@ -2,7 +2,7 @@
 
 ## Current release gates
 
-`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 12 KB gzip, geometry-only imports approximately 2.8 KB, bulb preview approximately 3.5 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version. Renderer/geometry budgets are now 12.6 KB/3 KB to cover the coupled cable solver, safeguarded near-taut constraints, terminal-wire clipping, and document-overlay measurement. Scroll-container measurement, soft contact, and drag stabilization bring the renderer to approximately 12.5 KB gzip without runtime dependencies.
+`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 12 KB gzip, geometry-only imports approximately 2.8 KB, bulb preview approximately 3.5 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version. Renderer/geometry budgets are now 13 KB/3 KB to cover the coupled cable solver, safeguarded near-taut constraints, terminal-wire clipping, and document-overlay measurement. Scroll-container measurement, soft contact, and drag stabilization bring the renderer to approximately 13 KB gzip without runtime dependencies.
 
 Browser checks enforce that 300 equivalent option updates stay below a generous 500 ms CPU budget and make zero DOM mutations. They also cover a page of 12 decorations: only sections with a nonzero visible intersection animate, and scrolling resumes/pauses the appropriate instances. Separate tests assert zero animation-frame requests during quiet breeze periods, immediate wake on a grab, and complete offscreen suspension of frames, animation, and pattern timers. These behavioral gates are more stable than asserting a universal FPS on shared CI hardware.
 
@@ -43,3 +43,5 @@ Optimizations:
 Verification included geometry/physics tests, real mouse release and flicks, SSR, and React StrictMode with 30 parent renders that changed text and recreated inline option arrays. Bulb DOM, animation identity, and a single mounted instance survived those renders.
 
 Geometry/material edits still rebuild their instance. Large SVG installations still cost memory, paint, and animation work while visible. The renderer caps an instance at 600 bulbs; use wider spacing or disable breeze when decorating many visible sections. Intersections are cleared at rest, not collision-simulated during dragging. Existing bulb artwork and gravity behavior are preserved.
+
+Curtain attachment tracking adds explicit header ties and moving pin constraints, while unmanipulated drops keep their idle scheduling.

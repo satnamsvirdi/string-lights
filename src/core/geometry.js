@@ -98,6 +98,15 @@ export function createGeometry(width, height, input = {}) {
           x,
           y: y + (length * j) / n,
           mobility: (j / n) ** 2,
+          ...(j === 0
+            ? {
+                attachment: {
+                  wire: headerWires.indexOf(header),
+                  segment: segment - 1,
+                  t: (x - a.x) / (b.x - a.x),
+                },
+              }
+            : {}),
         })),
         0,
         true,
@@ -158,6 +167,8 @@ export function createGeometry(width, height, input = {}) {
     return true;
   });
   for (const bulb of accepted) bulb.wire = indices.get(bulb.wire);
+  for (const wire of visibleWires)
+    if (wire[0].attachment) wire[0].attachment.wire = indices.get(wire[0].attachment.wire);
   return { wires: visibleWires, bulbs: accepted };
 }
 function clearBulbOverlaps(bulbs, o) {

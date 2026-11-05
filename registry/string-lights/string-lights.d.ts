@@ -48,6 +48,8 @@ export interface StringPoint {
   x: number;
   y: number;
   mobility: number;
+  /** A curtain drop's tied endpoint on its header. */
+  attachment?: { wire: number; segment: number; t: number };
 }
 export interface StringBulb extends StringPoint {
   wire: number;

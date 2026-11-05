@@ -4,6 +4,7 @@ import { PHYSICS_STEP, stepRope, ropeAttachment } from './physics.js';
 import { clamp } from './utils.js';
 import { pathFor } from './paths.js';
 import { collideStrands } from './collisions.js';
+import { followAttachment } from './attachments.js';
 export function createMotion(state) {
   const { win, media } = state;
   let frame = 0,
@@ -52,6 +53,19 @@ export function createMotion(state) {
     if (state.options.collisions) collideStrands(state.strands, state.drag?.strand, dt);
     // Untouched strands use a small breeze sway; grabbed strands use local rope dynamics.
     for (const [i, strand] of state.strands.entries()) {
+      const oldX = strand.anchorX || 0,
+        oldY = strand.anchorY || 0;
+      followAttachment(strand, state.strands);
+      const anchorMoved = oldX !== (strand.anchorX || 0) || oldY !== (strand.anchorY || 0);
+      if (anchorMoved || (strand.rope?.active && strand.anchorTransformed)) {
+        strand.paths.forEach((p) =>
+          p.setAttribute(
+            'transform',
+            strand.rope?.active ? '' : `translate(${strand.anchorX || 0} ${strand.anchorY || 0})`,
+          ),
+        );
+        strand.anchorTransformed = !strand.rope?.active;
+      }
       if (strand.rope?.active) {
         const held = state.drag?.strand === strand,
           wind = state.options.breeze ? breezeForce(windTime, i) * state.options.wind * 12 : 0;
@@ -82,7 +96,8 @@ export function createMotion(state) {
       const force = state.options.breeze ? breezeForce(windTime, i) * state.options.wind * 13 : 0;
       strand.velocity += (force - 5 * strand.offset - 3.6 * strand.velocity) * dt;
       strand.offset += strand.velocity * dt;
-      strand.changed = Math.abs(strand.offset) + Math.abs(strand.velocity) > 0.002 || strand.dirty;
+      strand.changed =
+        anchorMoved || Math.abs(strand.offset) + Math.abs(strand.velocity) > 0.002 || strand.dirty;
       if (strand.changed) {
         const d = pathFor(strand.points, strand.offset);
         strand.paths.forEach((p) => p.setAttribute('d', d));
@@ -95,7 +110,10 @@ export function createMotion(state) {
       if (!strand.changed) continue;
       const point = strand.rope?.active
         ? ropeAttachment(strand.rope, bulb.segment, bulb.t)
-        : { x: bulb.x + shift, y: bulb.y + shift * 0.12 };
+        : {
+            x: bulb.x + shift + (strand.anchorX || 0),
+            y: bulb.y + shift * 0.12 + (strand.anchorY || 0),
+          };
       let angle = bulb.angle;
       if (strand.rope?.active && bulb.angle) {
         const a = strand.rope.nodes[bulb.segment],
