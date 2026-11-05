@@ -1,0 +1,9 @@
+node_modules/
+packages/*/dist/
+artifacts/*.tgz
+.recovery/
+.DS_Store
+test-results/
+playwright-report/
+coverage/
+packages/*/LICENSE

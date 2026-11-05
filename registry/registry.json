@@ -1,0 +1,28 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "string-lights",
+  "homepage": "http://localhost:8770",
+  "items": [
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+      "name": "string-lights",
+      "type": "registry:ui",
+      "title": "String Lights",
+      "description": "Interactive festival, Christmas, and Diwali string lights.",
+      "files": [
+        {
+          "path": "registry/string-lights/string-lights.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/string-lights/string-lights.js",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/string-lights/string-lights.d.ts",
+          "type": "registry:lib"
+        }
+      ]
+    }
+  ]
+}
