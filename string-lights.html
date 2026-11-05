@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  /><title>String Lights — Festival decorations</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ground: #080808;
+      --panel: #141414;
+      --ink: #f5f1e8;
+      --muted: #aaa69f;
+      --line: #303030;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--ground);
+      color: var(--ink);
+      font:
+        15px/1.5 'Segoe UI',
+        sans-serif;
+    }
+    header,
+    main {
+      max-width: 1400px;
+      margin: auto;
+    }
+    header {
+      padding: 22px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header strong {
+      font-family: Georgia, serif;
+      font-size: 28px;
+      font-weight: 400;
+    }
+    header a {
+      color: var(--muted);
+    }
+    main {
+      padding: 10px 32px 60px;
+    }
+    .intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 28px;
+      letter-spacing: -1px;
+      font-weight: 500;
+      margin: 0;
+    }
+    p {
+      color: var(--muted);
+      margin: 6px 0;
+    }
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+    button,
+    select {
+      background: #222;
+      color: var(--ink);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 9px 12px;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #333;
+    }
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 4px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 24px;
+    }
+    aside {
+      background: var(--panel);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    select {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+    }
+    input[type='range'] {
+      width: 100%;
+      accent-color: white;
+    }
+    input[type='checkbox'] {
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    .views {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .sample {
+      min-width: 0;
+    }
+    h2 {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .stage {
+      height: 270px;
+      background: #171819;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .copy {
+      text-align: center;
+      padding: 38px 26px 16px;
+      position: relative;
+      z-index: 11;
+    }
+    [data-layout='curtain'] .copy {
+      background: #171819;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 30px;
+    }
+    .copy h3 {
+      font-family: Georgia, serif;
+      font-size: 25px;
+      line-height: 1.1;
+      font-weight: 400;
+      margin: 0 0 12px;
+    }
+    .copy p {
+      font-size: 13px;
+    }
+    .copy button {
+      font-size: 12px;
+      margin-top: 12px;
+      background: transparent;
+    }
+    .light {
+      background: #eee6d7;
+      color: #29281f;
+    }
+    .light p {
+      color: #605c51;
+    }
+    .light button {
+      color: #29281f;
+      border-color: #928c80;
+    }
+    .strip {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    .specimen {
+      flex: 1;
+      min-width: 100px;
+      height: 200px;
+      text-align: center;
+      background: #111316;
+      border-radius: 8px;
+      position: relative;
+      font-size: 13px;
+      color: var(--muted);
+      overflow: hidden;
+    }
+    .specimen svg {
+      display: block;
+      width: 100%;
+      height: 168px;
+    }
+    .specimen span {
+      display: block;
+      text-transform: capitalize;
+    }
+    .code {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    pre {
+      margin: 0;
+      background: var(--panel);
+      padding: 20px;
+      border-radius: 8px;
+      overflow: auto;
+      font:
+        13px/1.6 'Segoe UI',
+        monospace;
+    }
+    footer {
+      margin-top: 25px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    a {
+      color: inherit;
+    }
+    @media (max-width: 900px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      aside {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      aside label {
+        margin: 0;
+      }
+      .intro {
+        align-items: start;
+        gap: 20px;
+      }
+    }
+    @media (max-width: 600px) {
+      aside {
+        order: 2;
+      }
+      header {
+        padding: 16px;
+      }
+      main {
+        padding: 16px;
+      }
+      .views {
+        grid-template-columns: 1fr;
+      }
+      .stage {
+        height: 280px;
+      }
+      aside {
+        grid-template-columns: 1fr 1fr;
+      }
+      .intro {
+        display: block;
+      }
+      .intro button {
+        margin-top: 14px;
+      }
+      .code {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 25px;
+      }
+    }
+    @media (min-width: 901px) {
+      aside {
+        position: sticky;
+        top: 16px;
+        align-self: start;
+        max-height: calc(100vh - 220px);
+        min-height: 360px;
+        overflow: auto;
+      }
+    }
+    .controlActions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .controlActions button {
+      flex: 1;
+      min-width: 0;
+    }
+    input[type='text'],
+    input[type='number'] {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      margin-top: 6px;
+      border: 1px solid #555;
+      border-radius: 6px;
+      background: #222;
+      color: var(--ink);
+      padding: 9px;
+      font: inherit;
+      min-height: 44px;
+    }
+    fieldset {
+      min-width: 0;
+      margin: 0 0 16px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    legend {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    fieldset label {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      min-height: 36px;
+      font-size: 13px;
+    }
+    .currentPattern {
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+    #pauseSelected {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .sampleHeader {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .sampleHeader h2 {
+      margin: 0;
+      flex: 1;
+      overflow-wrap: anywhere;
+    }
+    .patternBadge {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .editString {
+      font-size: 12px;
+      min-height: 32px;
+      padding: 4px 10px;
+    }
+    .sample[data-selected='true'] .sampleHeader h2 {
+      color: var(--ink);
+    }
+    .sample[data-selected='true'] .editString {
+      border-color: #ddd;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    select:disabled {
+      opacity: 0.5;
+    }
+    pre {
+      max-height: 440px;
+    }
+    aside > button {
+      margin-top: 4px;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    @media (max-width: 900px) {
+      .editString {
+        min-height: 44px;
+      }
+      aside > * {
+        min-width: 0;
+      }
+      aside fieldset,
+      aside #programControls {
+        grid-column: 1/-1;
+      }
+      #programControls {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 12px;
+      }
+    }
+    @media (max-width: 600px) {
+      #programControls {
+        grid-template-columns: 1fr;
+      }
+    }
+    #presetControls > label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    #presetControls p {
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+    #presetControls .controlActions {
+      margin-bottom: 12px;
+    }
+    #presetControls .controlActions button {
+      font-size: 13px;
+      padding: 9px 6px;
+      white-space: nowrap;
+    }
+  </style>
+  <header><strong>String Lights</strong><a href="StringLights.md">Integration guide</a></header>
+  <main>
+    <div class="intro">
+      <div>
+        <h1>Dress your website in light.</h1>
+        <p>Choose a string, mix its bulbs, and set its own rhythm. Drag the strings to play.</p>
+      </div>
+      <button id="pause">Pause all strings</button>
+    </div>
+    <div class="workspace">
+      <aside aria-label="Selected string controls">
+        <fieldset id="presetControls">
+          <legend>Ready-made strings</legend>
+          <label>Preset<select id="preset"></select></label>
+          <p id="presetDescription"></p>
+          <div class="controlActions">
+            <button id="applyPreset">Apply</button><button id="addPreset">Add preset</button>
+          </div>
+          <p class="currentPattern">
+            Apply updates the selected string. Add creates a separate string.
+          </p>
+        </fieldset>
+        <label>Selected string<select id="stringSelect"></select></label>
+        <div class="controlActions">
+          <button id="addString">Add string</button><button id="removeString">Remove</button>
+        </div>
+        <label>String name<input id="stringName" type="text" maxlength="40" /></label>
+        <label
+          >Layout<select id="layout">
+            <option value="roofline">Roofline</option>
+            <option value="curtain">Curtain</option>
+            <option value="draped">Draped</option>
+            <option value="border">Border</option>
+          </select></label
+        >
+        <label
+          >Bulb shape<select id="shape">
+            <option selected>rice</option>
+            <option value="led">classic LED</option>
+            <option>round</option>
+            <option>crystal</option>
+            <option>flower</option>
+            <option value="mixed">Mixed bulb shapes</option>
+          </select></label
+        >
+        <fieldset id="shapeMix" hidden><legend>Included bulb shapes</legend></fieldset>
+        <label
+          >Palette<select id="colors">
+            <option value="electric">Classic LED (photo)</option>
+            <option value="multicolor" selected>Multicolor + white</option>
+            <option value="white">Pure white</option>
+            <option value="warm">Warm amber</option>
+            <option value="tricolor">Saffron, white, green</option>
+          </select></label
+        >
+        <label
+          >Rhythm<select id="mode">
+            <option>twinkle</option>
+            <option>static</option>
+            <option>blink</option>
+            <option>chase</option>
+            <option>wave</option>
+          </select></label
+        >
+        <label
+          >Pattern switching<select id="patternOrder">
+            <option value="fixed">Keep one pattern</option>
+            <option value="cycle">Cycle in order</option>
+            <option value="random">Shuffle patterns</option>
+          </select></label
+        >
+        <div id="programControls" hidden>
+          <label
+            >Change every (seconds)<input
+              id="patternInterval"
+              type="number"
+              required
+              min="1"
+              max="3600"
+              step="1"
+              value="10"
+          /></label>
+          <fieldset id="patternMix"><legend>Patterns to include</legend></fieldset>
+          <p id="sequenceOrder" class="currentPattern"></p>
+        </div>
+        <p class="currentPattern">Pattern: <output id="activePattern">twinkle</output></p>
+        <button id="pauseSelected">Pause this string</button>
+        <label
+          >Bulb spacing <output id="spacingValue">28 px</output
+          ><input id="spacing" type="range" min="16" max="70" value="28"
+        /></label>
+        <label
+          >Bulb size <output id="sizeValue" for="size">1.2×</output
+          ><input id="size" type="range" min="0.5" max="2.5" value="1.2" step="0.1"
+        /></label>
+        <label>Speed<input id="speed" type="range" min="0.2" max="2" value="1" step="0.1" /></label>
+        <label>Glow<input id="glow" type="range" min="0" max="1" value="0.65" step="0.05" /></label>
+        <label><input id="interactive" type="checkbox" checked />Drag the lights</label
+        ><label><input id="breeze" type="checkbox" checked />Gentle breeze</label
+        ><label><input id="dimBase" type="checkbox" />Dim base colors</label
+        ><label><input id="glitter" type="checkbox" />Glitter accents</label
+        ><button id="randomize">New twinkle pattern</button
+        ><button id="pageToggle">Preview selected full page</button>
+      </aside>
+      <div>
+        <div class="views">
+          <section class="sample">
+            <h2>01 / Roofline</h2>
+            <div class="stage" data-layout="roofline">
+              <div class="copy">
+                <h3>A little light,<br />everywhere.</h3>
+                <p>A festive welcome for your whole page.</p>
+                <button class="try">Try clicking through</button>
+              </div>
+            </div>
+          </section>
+          <section class="sample">
+            <h2>02 / Curtain</h2>
+            <div class="stage" data-layout="curtain">
+              <div class="copy">
+                <h3>Let the evening glow.</h3>
+                <p>Hanging strings, just like home.</p>
+              </div>
+            </div>
+          </section>
+          <section class="sample">
+            <h2>03 / Draped</h2>
+            <div class="stage" data-layout="draped">
+              <div class="copy" style="padding-top: 120px">
+                <h3>Gather under the lights.</h3>
+                <p>Layered swags with a gentle fall.</p>
+              </div>
+            </div>
+          </section>
+          <section class="sample">
+            <h2>04 / Component border</h2>
+            <div class="stage light" data-layout="border">
+              <div class="copy">
+                <h3>Small moments.<br />Bright celebrations.</h3>
+                <p>A string around any card or section.</p>
+                <button class="try">Try clicking through</button>
+              </div>
+            </div>
+          </section>
+        </div>
+        <h2 style="margin-top: 24px">Glass materials / same bulbs, enlarged</h2>
+        <div class="strip" aria-label="Bulb specimens"></div>
+      </div>
+    </div>
+    <div class="code">
+      <pre id="code"></pre>
+      <button id="copy">Copy JavaScript</button>
+    </div>
+    <footer>
+      React and vanilla JavaScript · No dependencies in the renderer · Respects reduced motion ·
+      <a href="StringLights.md">Read the API</a>
+      <p id="notice" role="status"></p>
+    </footer>
+  </main>
+  <script type="module" src="string-demo.js"></script>
+</html>
