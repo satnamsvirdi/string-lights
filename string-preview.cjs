@@ -7,9 +7,21 @@ const files = {
   '/string-demo.js': ['string-demo.js', 'text/javascript'],
   '/StringLights.js': ['packages/string-lights-core/dist/index.js', 'text/javascript'],
   '/index.js.map': ['packages/string-lights-core/dist/index.js.map', 'application/json'],
-  '/StringLights.md': ['StringLights.md', 'text/plain'],
+  '/StringLights.md': ['docs/api.md', 'text/plain'],
   '/r/string-lights.json': ['registry/public/r/string-lights.json', 'application/json'],
 };
+for (const doc of [
+  'README.md',
+  'CHANGELOG.md',
+  'CONTRIBUTING.md',
+  'SECURITY.md',
+  'docs/api.md',
+  'docs/architecture.md',
+  'docs/performance.md',
+  'docs/maintaining.md',
+]) {
+  files['/' + doc] = [doc, 'text/plain'];
+}
 http
   .createServer(async (req, res) => {
     const file = files[new URL(req.url, 'http://localhost').pathname];

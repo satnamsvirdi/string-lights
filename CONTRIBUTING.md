@@ -17,3 +17,5 @@ Add tests that exercise observable behavior for correctness or performance fixes
 Use Conventional Commits for commits and squash-merge PR titles. `fix:` and `perf:` produce patch releases, `feat:` produces minor releases, and `!` or a `BREAKING CHANGE:` footer produces a major release. `docs:`, `test:`, `ci:`, `build:`, `refactor:`, and `chore:` describe changes that do not alter the public behavior unless marked breaking. Run `npm run version:auto` to preview the next version locally.
 
 Keep changes focused and explain the user-visible behavior and verification. Code of conduct: treat other contributors respectfully, discuss code rather than people, and keep issue reports specific and reproducible.
+
+For module responsibilities, see [Architecture](docs/architecture.md). For tarballs, shadcn installation and publishing, see [Building and releasing](docs/maintaining.md).

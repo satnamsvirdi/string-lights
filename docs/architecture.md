@@ -6,10 +6,10 @@
 | ----------------------- | ------------------------------------------------------------------------------------------ |
 | `options`               | Shared palettes, defaults, input validation, and independent normalized values             |
 | `presets`               | Immutable starting configurations                                                          |
-| `geometry`              | Catenaries, bulb attachment points, and spatially indexed resting clearance                |
+| `geometry` / `spacing`  | Catenaries, uniform bulb spacing, curtain ties and resting clearance                       |
 | `physics`               | Fixed-step gravity, coupled distance constraints, local hand contact, and release momentum |
 | `materials` / `preview` | Glass artwork, shared socket drawing, and standalone bulb previews                         |
-| `lighting`              | Web Animations and active-time pattern scheduling                                          |
+| `lighting` / `rhythms`  | Web Animations, synchronized channel beats and active-time pattern scheduling              |
 | `motion` / `breeze`     | Visible rope/breeze frames, sleep, and quiet-period wakeups                                |
 | `interaction`           | Delegated pointer input, exact local grabs, and release                                    |
 | `renderer` / `paths`    | SVG scene construction and smooth cable paths                                              |

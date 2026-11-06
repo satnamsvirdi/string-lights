@@ -2,12 +2,12 @@
 
 Dependency-free SVG Diwali string lights for JavaScript and React. Mix bulb shapes, create independently controlled strings, and run fixed, ordered, or shuffled lighting programs. Serve ES modules over HTTP rather than opening the HTML through `file://`.
 
-For npm tarballs, typed package imports, and the copyable shadcn component, see [distribution instructions](PACKAGING.md).
+For npm tarballs, typed package imports, and the copyable shadcn component, see [distribution instructions](maintaining.md).
 
 ## JavaScript: independent strings
 
 ```js
-import { createStringLights } from './StringLights.js';
+import { createStringLights } from 'string-lights';
 
 const balcony = createStringLights('#balcony', {
   layout: 'roofline',
@@ -40,7 +40,7 @@ console.log(doorway.pattern); // Current selected lighting pattern.
 
 Each target needs a size; give empty sections a `min-height`. Use `createStringLights(document.body, options)` for a fixed full-viewport overlay. Element targets use their own dimensions. Multiple instances have independent options, geometry, clocks, seeds, and lifecycle. Instances can share a host, but intersection clearance is calculated within each instance.
 
-Equivalent updates are ignored, including equivalent arrays. Speed, lighting program, pause, and wind edits retain the bulb DOM; geometry/material edits rebuild that instance. Component instances pause when outside the viewport and resume when visible. See [performance measurements](PERFORMANCE.md).
+Equivalent updates are ignored, including equivalent arrays. Speed, lighting program, pause, and wind edits retain the bulb DOM; geometry/material edits rebuild that instance. Component instances pause when outside the viewport and resume when visible. See [performance measurements](performance.md).
 
 ## Ready-made presets
 
@@ -49,7 +49,7 @@ The editor offers eight presets: Diwali rainbow, Classic electric, Warm gatherin
 Presets are also available to JavaScript and React integrations:
 
 ```js
-import { createStringLights, stringLightsPresets } from './StringLights.js';
+import { createStringLights, stringLightsPresets } from 'string-lights';
 
 const lights = createStringLights('#balcony', {
   ...stringLightsPresets.festive.options,
@@ -101,7 +101,7 @@ Use `fullPage` for a viewport decoration. The wrapper forwards div attributes, `
 | Option            | Default                              | Values                                                                                                                                              |
 | ----------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `layout`          | `roofline`                           | `roofline`, `curtain`, `draped`, `border`                                                                                                           |
-| `shape`           | `rice`                               | `rice`, `round`, `crystal`, `flower`, `led`, or a nonempty array of these shapes                                                                    |
+| `shape`           | `rice`                               | `rice`, `round`, `crystal`, `flower`, `led`, `heart`, or a nonempty array of these shapes                                                           |
 | `colors`          | `multicolor`                         | `multicolor` (includes white), `electric` (photo-inspired red/green/blue/yellow/cool white), `white`, `warm`, `tricolor`, or an array of hex colors |
 | `mode`            | `fade`                               | `static`, `blink`, `chase`, `wave`, `alternate`, `pairs`, `double`, `steps`, `bounce`, `fade`; used with a fixed pattern                            |
 | `animated`        | `true`                               | Light animation switch; false keeps steady bulbs and preserves the chosen pattern                                                                   |
@@ -111,18 +111,20 @@ Use `fullPage` for a viewport decoration. The wrapper forwards div attributes, `
 | `patternSequence` | `['blink', 'chase', 'wave', 'fade']` | A nonempty array of distinct valid pattern names; can include `static`                                                                              |
 | `dimBase`         | `false`                              | Darken idle glass and deepen animation dim phases                                                                                                   |
 | `glitter`         | `false`                              | Flecks inside the glass and occasional star glints                                                                                                  |
-| `spacing`         | `28`                                 | Requested attachment spacing in CSS pixels, clamped to 16–100                                                                                       |
+| `spacing`         | `28`                                 | Minimum spacing along the cable; rows widen uniformly for bulb clearance, clamped to 16–100                                                         |
 | `size`            | `1`                                  | Bulb scale, clamped to 0.5–2.5                                                                                                                      |
 | `sag`             | `48`                                 | Swag depth in CSS pixels, clamped to 0–140 and fitted to target height                                                                              |
+| `anchorCount`     | `0`                                  | Number of top attachment points, 1-12; 0 uses layout defaults                                                                                       |
 | `speed`           | `1`                                  | Lighting-animation speed multiplier, clamped to 0.2–2                                                                                               |
 | `glow`            | `0.65`                               | Halo opacity, clamped to 0–1; zero disables halos                                                                                                   |
 | `breeze`          | `true`                               | Occasional gentle wind, independent of lighting mode                                                                                                |
 | `wind`            | `1`                                  | Wind strength, clamped to 0–2                                                                                                                       |
 | `interactive`     | `true`                               | Mouse, pen, and touch grabs on bulbs and wires                                                                                                      |
+| `collisions`      | `true`                               | Soft contact between strands within this instance; false disables it                                                                                |
 | `seed`            | `7`                                  | Finite number for repeatable geometry and pattern shuffle                                                                                           |
 | `paused`          | `false`                              | Freeze lighting, wind, rope motion, and the pattern clock                                                                                           |
 
-Color arrays accept `#RGB` and `#RRGGBB`. Shape arrays repeat in their supplied order; repeated entries can weight a mix. Shapes that cannot fit at an attachment are retried at the next available position rather than silently disappearing from the mix. All shapes retain their individual glass artwork. Clearance accounts for shape, socket, mounting angle, and size. Soft halos can blend. Dense strings and intersections can have gaps; at most 600 bulbs are generated per instance.
+Color arrays accept `#RGB` and `#RRGGBB`. Shape arrays repeat in their supplied order; repeated entries can weight a mix. Shapes that cannot fit at an attachment are retried at the next available position rather than silently disappearing from the mix. All shapes retain their individual glass artwork. Clearance accounts for shape, socket, mounting angle, and size. Soft halos can blend. Connected rows keep a uniform pitch across supports; distinct wire intersections can omit bulbs to avoid overlap; at most 600 bulbs are generated per instance.
 
 Unknown enums, invalid colors, empty/invalid arrays, duplicate pattern names, and nonfinite numeric values throw `TypeError`. Numeric ranges clamp. Input arrays are copied so independently configured instances do not share mutable arrays.
 
@@ -162,7 +164,7 @@ Untouched roofline and draped strings use smooth catenaries with a small occasio
 
 Dragging activates a local position-based rope solver at fixed 1/120-second steps. The exact grabbed attachment follows the pointer, rather than warping the whole strand around its center. Gravity, inertia, damping, cable-length constraints, and pinned supports control its movement. Roofline/draped spans keep both supports; curtain and border side strands hang from their top anchor with free lower tails. Cable tension resists impossible pulls. Release transfers recent hand velocity to the grabbed attachment without changing any particle positions. Holding still before release removes that flick impulse. Gravity accelerates the strand downward, cable tension redirects it into a swing, and speed-dependent air resistance gradually removes energy. The strand can overshoot its resting line and reverse direction several times; there is no easing curve or force pulling free particles to their original coordinates. Resting ropes sleep only after sustained low velocity.
 
-Pointer capture survives movement outside the hit area. Release, cancellation, lost capture, and blur release the strand. Resize/update/unmount cancel grabs safely. Pause freezes motion and releases the pointer. Rope motion is a lightweight 2D simulation; it does not simulate collisions during deliberate dragging.
+Pointer capture survives movement outside the hit area. Release, cancellation, lost capture, and blur release the strand. Resize/update/unmount cancel grabs safely. Pause freezes motion and releases the pointer. Rope motion is a lightweight 2D simulation. Soft strand contact is enabled by default; set `collisions: false` to disable it.
 
 Decorations are hidden from assistive technology and never receive keyboard focus. The drag interaction is decorative and exposes no keyboard-only content or task. Reduced motion disables wind, dragging, blink animation, and program switching. Hidden documents pause their animations and clocks. Consumers choosing animation should provide pause controls, as the demo does. To keep a decoration completely still, use `mode: 'static', patternOrder: 'fixed', breeze: false, interactive: false`.
 
@@ -174,12 +176,10 @@ Bulbs use shared SVG gradients, tinted glass, internal emitters, reflections, mo
 
 `createBulbPreview(options)` returns an accessible enlarged SVG using the same materials as live strings. If `shape` is an array, the preview shows its first entry. It accesses `document` only when called. `createGeometry(width, height, options)` and `normalizeOptions(options)` are exported for custom rendering; geometry includes each bulb's shape and its wire segment attachment. `createRope(points)`, `ropeAttachment(rope, segment, t)`, `stepRope(rope, 1/120, grab, wind)`, and `releaseRope(rope, grab, velocity)` support deterministic custom simulation and tests.
 
-## Demo and verification
+## Local editor
 
-Run `node string-preview.cjs` and open http://127.0.0.1:8770. Each card is an independent string. Select it from the menu or its Edit button. Add/remove/rename strings, mix shapes, choose palettes and layouts, select a fixed/cyclic/shuffled program and interval, pause one or all, and copy the full independent-instance configuration. The full-page button previews the selected string's configuration. Preview changes are session-only; copy the code to keep them.
+Run `npm ci`, then `npm run dev` from the repository root. Open http://127.0.0.1:8770 to add independent strings, choose presets, edit settings and copy configurations. Editor changes last for the current session.
 
-Reusable Storybook examples are in `react/StringLights.stories.jsx`, including mixed shapes, timed programs, and independent instances. The standalone project uses `npm run dev` for its visual editor.
+See [Contributing](../CONTRIBUTING.md) for development checks and [Building and releasing](maintaining.md) for npm and shadcn builds.
 
-Checks: `node --test StringLights.test.mjs` and `npm --prefix react run build-storybook`. Twelve tests cover geometry, rope behavior, mixed shapes, input validation, array isolation, continuous release, pendulum overshoot, cable length during swing, and local flick momentum. Browser checks cover independent clocks, ordered/shuffled switching, pause/resume, destroy cleanup, reduced motion, mixed material references, add/remove/edit isolation, code export, full-page preview, responsive overflow, scheduled switching during a real mouse grab, gravity-driven release reversals with decaying amplitude, and retained momentum after a mouse flick. SSR and the production Storybook build pass. Desktop, tablet, and phone screenshots were inspected; the design inspector has zero failures. Enlarged material samples remain below the live editor previews.
-
-Research references: [Sparkworld rice/string strings](https://www.sparkworldlights.com/en/collection/rice-lights), [Ahuja festival lights and waterfall curtains](https://ahujainternational.com/collections/festival-speical-lights). These inform the visual vocabulary, not claims of electrical simulation.
+Curtain drops have equal cable lengths; their bottom offsets follow the header sag. Each drop ends at its final bulb.

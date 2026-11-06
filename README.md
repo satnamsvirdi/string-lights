@@ -92,7 +92,7 @@ Reduced-motion preferences still take priority. `pause()`/`play()` stop and resu
 
 ## Install and distribute
 
-Install the public npm packages with `npm install string-lights` for JavaScript or `npm install string-lights-react` for React. Local tarballs are also supported as described in [PACKAGING.md](PACKAGING.md). A separate [shadcn source distribution](PACKAGING.md#copyable-shadcn-component) installs the editable component and local engine without either npm package.
+Install the public npm packages with `npm install string-lights` for JavaScript or `npm install string-lights-react` for React. Local tarballs are also supported as described in [the maintainer guide](docs/maintaining.md). A separate [shadcn source distribution](docs/maintaining.md#copyable-shadcn-component) installs the editable component and local engine without either npm package.
 
 ## Quality and releases
 
@@ -102,13 +102,13 @@ npm run check
 npm run version:auto
 ```
 
-Checks cover lint, strict component/consumer types, geometry and physics, installed tarballs, SSR, tree shaking, bundle budgets, browser lifecycle, pointer interactions, and idle motion. CI runs Chromium, Firefox, and WebKit on Node 22/React 18 and Node 24/React 19. Local browser execution needs the platform runtimes required by Playwright; the Linux CI installs its browser dependencies explicitly.
+Checks cover lint, strict component/consumer types, geometry and physics, installed tarballs, SSR, tree shaking, bundle budgets, browser lifecycle, pointer interactions, and idle motion. When GitHub Actions is enabled, CI runs Chromium, Firefox, and WebKit on Node 22/React 18 and Node 24/React 19. Local browser execution needs the platform runtimes required by Playwright; the Linux CI installs its browser dependencies explicitly.
 
-Conventional Commits drive automatic semantic versioning and changelogs through Release Please. Both packages and their dependency range version together. See [RELEASING.md](RELEASING.md).
+When GitHub Actions is enabled, Conventional Commits drive automatic semantic versioning and changelogs through Release Please. Both packages and their dependency range version together. See [the release guide](docs/maintaining.md#versioning).
 
-- [API and options](StringLights.md)
-- [Architecture](ARCHITECTURE.md)
-- [Performance and limits](PERFORMANCE.md)
+- [API and options](docs/api.md)
+- [Architecture](docs/architecture.md)
+- [Performance and limits](docs/performance.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 
