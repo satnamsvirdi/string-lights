@@ -1,5 +1,7 @@
 # String Lights
 
+[Try the live demo on CodePen](https://codepen.io/editor/Pika-Singh/pen/01a1ac4c-1207-7c55-b921-f3d81af5a2f2)
+
 Connected string rows keep an even distance between bulbs across supports. `spacing` is the minimum distance along the wire; a row widens uniformly when larger bulbs need clearance.
 
 Set `anchorCount` to choose 1–12 evenly spaced top attachment points, independently of `sag`. Use `0` (default) for the layout's original count: two on roofline, border, and curtain headers; three per draped row. For example, `lights.update({ anchorCount: 4, sag: 60 })` creates four top supports.
