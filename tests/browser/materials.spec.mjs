@@ -62,7 +62,10 @@ test('heart glass, glitter and dimmed materials render with an upright specimen'
     const clip = [...lights.element.querySelectorAll('clipPath')].find((node) =>
       node.id.endsWith('-heart-glass-clip'),
     );
-    const shell = clip.querySelector('path');
+    // Measure rendered glass: Firefox gives definition-only clip paths an empty bounding box.
+    const shell = [...heart.querySelectorAll('path')].find(
+      (path) => path.getAttribute('d') === clip.querySelector('path').getAttribute('d'),
+    );
     return {
       width: shell.getBBox().width,
       height: shell.getBBox().height,
