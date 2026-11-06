@@ -108,12 +108,12 @@ const item = {
 };
 await write('registry/public/r/string-lights.json', JSON.stringify(item, null, 2) + '\n');
 await write(
-  'registry/registry.json',
+  'registry.json',
   JSON.stringify(
     {
       $schema: 'https://ui.shadcn.com/schema/registry.json',
       name: 'string-lights',
-      homepage: 'http://localhost:8770',
+      homepage: 'https://github.com/satnamsvirdi/string-lights',
       items: [{ ...item, files: files.map(({ content: _content, ...file }) => file) }],
     },
     null,

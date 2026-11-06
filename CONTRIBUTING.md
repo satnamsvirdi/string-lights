@@ -18,4 +18,6 @@ Use Conventional Commits for commits and squash-merge PR titles. `fix:` and `per
 
 Keep changes focused and explain the user-visible behavior and verification. Code of conduct: treat other contributors respectfully, discuss code rather than people, and keep issue reports specific and reproducible.
 
-For module responsibilities, see [Architecture](docs/architecture.md). For tarballs, shadcn installation and publishing, see [Building and releasing](docs/maintaining.md).
+For module responsibilities, see [Architecture](docs/architecture.md). Consumer setup is documented in [Installation](docs/installation.md).
+
+`npm run build` regenerates the npm bundles, root `registry.json` and shadcn source files. `npm run test:packages` verifies packed installs and registry parity. Commit the generated registry changes with their source changes.

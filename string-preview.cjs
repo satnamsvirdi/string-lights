@@ -18,7 +18,7 @@ for (const doc of [
   'docs/api.md',
   'docs/architecture.md',
   'docs/performance.md',
-  'docs/maintaining.md',
+  'docs/installation.md',
 ]) {
   files['/' + doc] = [doc, 'text/plain'];
 }

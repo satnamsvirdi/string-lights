@@ -92,7 +92,13 @@ Reduced-motion preferences still take priority. `pause()`/`play()` stop and resu
 
 ## Install and distribute
 
-Install the public npm packages with `npm install string-lights` for JavaScript or `npm install string-lights-react` for React. Local tarballs are also supported as described in [the maintainer guide](docs/maintaining.md). A separate [shadcn source distribution](docs/maintaining.md#copyable-shadcn-component) installs the editable component and local engine without either npm package.
+Install with `npm install string-lights` for JavaScript or `npm install string-lights-react` for React. For editable source in a shadcn project:
+
+```sh
+npx shadcn@latest add satnamsvirdi/string-lights/string-lights
+```
+
+See [Installation](docs/installation.md) for npm and shadcn examples. GitHub installation needs repository access until this repository is public.
 
 ## Quality and releases
 
@@ -104,7 +110,7 @@ npm run version:auto
 
 Checks cover lint, strict component/consumer types, geometry and physics, installed tarballs, SSR, tree shaking, bundle budgets, browser lifecycle, pointer interactions, and idle motion. When GitHub Actions is enabled, CI runs Chromium, Firefox, and WebKit on Node 22/React 18 and Node 24/React 19. Local browser execution needs the platform runtimes required by Playwright; the Linux CI installs its browser dependencies explicitly.
 
-When GitHub Actions is enabled, Conventional Commits drive automatic semantic versioning and changelogs through Release Please. Both packages and their dependency range version together. See [the release guide](docs/maintaining.md#versioning).
+Both packages version together. See the [changelog](CHANGELOG.md) for release notes and [Contributing](CONTRIBUTING.md) for development checks.
 
 - [API and options](docs/api.md)
 - [Architecture](docs/architecture.md)

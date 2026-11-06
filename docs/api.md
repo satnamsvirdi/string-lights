@@ -2,7 +2,7 @@
 
 Dependency-free SVG Diwali string lights for JavaScript and React. Mix bulb shapes, create independently controlled strings, and run fixed, ordered, or shuffled lighting programs. Serve ES modules over HTTP rather than opening the HTML through `file://`.
 
-For npm tarballs, typed package imports, and the copyable shadcn component, see [distribution instructions](maintaining.md).
+For npm imports and the copyable shadcn component, see [Installation](installation.md).
 
 ## JavaScript: independent strings
 
@@ -180,6 +180,6 @@ Bulbs use shared SVG gradients, tinted glass, internal emitters, reflections, mo
 
 Run `npm ci`, then `npm run dev` from the repository root. Open http://127.0.0.1:8770 to add independent strings, choose presets, edit settings and copy configurations. Editor changes last for the current session.
 
-See [Contributing](../CONTRIBUTING.md) for development checks and [Building and releasing](maintaining.md) for npm and shadcn builds.
+See [Contributing](../CONTRIBUTING.md) for development checks and [Installation](installation.md) for npm and shadcn setup.
 
 Curtain drops have equal cable lengths; their bottom offsets follow the header sag. Each drop ends at its final bulb.

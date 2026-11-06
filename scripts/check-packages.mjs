@@ -125,6 +125,14 @@ const item = JSON.parse(
   await readFile(resolve(root, 'registry/public/r/string-lights.json'), 'utf8'),
 );
 assert.equal(item.files.length, 3);
+const catalog = JSON.parse(await readFile(resolve(root, 'registry.json'), 'utf8'));
+assert.equal(catalog.homepage, 'https://github.com/satnamsvirdi/string-lights');
+assert.equal(catalog.items.length, 1);
+assert.deepEqual(
+  catalog.items[0].files,
+  item.files.map(({ content: _content, ...file }) => file),
+);
+
 for (const file of item.files) {
   assert.equal(await readFile(resolve(root, file.path), 'utf8'), file.content, 'registry drift');
   const target = resolve(

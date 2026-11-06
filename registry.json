@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "string-lights",
-  "homepage": "http://localhost:8770",
+  "homepage": "https://github.com/satnamsvirdi/string-lights",
   "items": [
     {
       "$schema": "https://ui.shadcn.com/schema/registry-item.json",
