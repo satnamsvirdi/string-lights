@@ -1,6 +1,6 @@
 {
-  "rendererGzip": 13000,
-  "geometryGzip": 3000,
+  "rendererGzip": 14000,
+  "geometryGzip": 3500,
   "previewGzip": 4200,
   "reactWrapperGzip": 700,
   "unusedImportBytes": 50,

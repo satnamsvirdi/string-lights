@@ -1,3 +1,4 @@
+import { rhythmFrames } from './rhythms.js';
 import { random } from './utils.js';
 import { isInactive } from './state.js';
 export function createLighting(state) {
@@ -54,22 +55,17 @@ export function createLighting(state) {
     animationSpeed = state.options.speed;
     animations.forEach((a) => a.cancel());
     animations = [];
+    const origin = svg.ownerDocument.timeline.currentTime;
     for (const [index, { light, bulb }] of state.bulbs.entries()) {
       if (mode === 'static' || !state.options.animated || media.matches || !light.animate) continue;
       let frames,
         duration = 4000 / state.options.speed,
         delay = 0;
       const low = state.options.dimBase ? 0.02 : 0.2;
-      if (mode === 'twinkle') {
-        frames = [
-          { opacity: 1 },
-          { opacity: state.options.dimBase ? low : 0.45, offset: 0.35 },
-          { opacity: 0.85, offset: 0.5 },
-          { opacity: state.options.dimBase ? 0.03 : 0.6, offset: 0.7 },
-          { opacity: 1 },
-        ];
-        duration = (3000 / state.options.speed) * (1 + bulb.phase * 0.6);
-        delay = -bulb.phase * duration;
+      const rhythm = rhythmFrames(mode, index, state.options.dimBase);
+      if (rhythm) {
+        frames = rhythm.frames;
+        duration = rhythm.duration / state.options.speed;
       } else if (mode === 'wave') {
         frames = [{ opacity: low }, { opacity: 1 }, { opacity: low }];
         delay = -index * 130;
@@ -83,6 +79,7 @@ export function createLighting(state) {
         iterations: Infinity,
         easing: 'linear',
       });
+      if (rhythm && origin !== null) animation.startTime = origin;
       if (isInactive(state)) animation.pause();
       animations.push(animation);
     }

@@ -13,15 +13,33 @@ export const palettes = /* @__PURE__ */ Object.freeze({
   tricolor: /* @__PURE__ */ Object.freeze(['#ff9438', '#ffffff', '#32df75']),
 });
 export const layouts = /* @__PURE__ */ Object.freeze(['roofline', 'curtain', 'draped', 'border']);
-export const shapes = /* @__PURE__ */ Object.freeze(['rice', 'round', 'crystal', 'flower', 'led']);
-export const modes = /* @__PURE__ */ Object.freeze(['static', 'blink', 'chase', 'twinkle', 'wave']);
+export const shapes = /* @__PURE__ */ Object.freeze([
+  'rice',
+  'round',
+  'crystal',
+  'flower',
+  'led',
+  'heart',
+]);
+export const modes = /* @__PURE__ */ Object.freeze([
+  'static',
+  'blink',
+  'chase',
+  'wave',
+  'alternate',
+  'pairs',
+  'double',
+  'steps',
+  'bounce',
+  'fade',
+]);
 
 import { clamp } from './utils.js';
 const defaults = /* @__PURE__ */ Object.freeze({
   layout: 'roofline',
   shape: 'rice',
   colors: 'multicolor',
-  mode: 'twinkle',
+  mode: 'fade',
   animated: true,
   spacing: 28,
   size: 1,
@@ -40,7 +58,7 @@ const defaults = /* @__PURE__ */ Object.freeze({
   pagePosition: 'fixed',
   patternOrder: 'fixed',
   patternInterval: 10,
-  patternSequence: /* @__PURE__ */ Object.freeze(['blink', 'chase', 'wave', 'twinkle']),
+  patternSequence: /* @__PURE__ */ Object.freeze(['blink', 'chase', 'wave', 'fade']),
 });
 export function normalizeOptions(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input))

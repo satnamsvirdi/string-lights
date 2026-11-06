@@ -14,7 +14,7 @@ test('300 equivalent updates stay within the CPU budget without DOM mutations', 
       layout: 'curtain',
       breeze: false,
       shape: ['rice', 'round', 'crystal'],
-      mode: 'twinkle',
+      mode: 'fade',
     };
     const lights = createStringLights(document.getElementById('host'), options);
     let mutations = 0;

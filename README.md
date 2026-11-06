@@ -1,5 +1,7 @@
 # String Lights
 
+Connected string rows keep an even distance between bulbs across supports. `spacing` is the minimum distance along the wire; a row widens uniformly when larger bulbs need clearance.
+
 Set `anchorCount` to choose 1–12 evenly spaced top attachment points, independently of `sag`. Use `0` (default) for the layout's original count: two on roofline, border, and curtain headers; three per draped row. For example, `lights.update({ anchorCount: 4, sag: 60 })` creates four top supports.
 
 Strands respond softly to contact by default. Set `collisions: false` to disable contact within an instance. Border and curtain headers honor `sag`. Scrollable component decorations cover their content; fixed page decorations fit the viewport without including its scrollbar.
@@ -36,7 +38,7 @@ lights.destroy();
 
 Give the target a height or `min-height`. Use `document.body` for a fixed viewport overlay. Content stays clickable between the wires and bulbs.
 
-Lights subtly twinkle by default. Turn light animation off and on from any event handler without losing the selected pattern:
+Lights gently fade by default. Turn light animation off and on from any event handler without losing the selected pattern:
 
 ```js
 lights.update({ animated: false }); // Steady bulbs; breeze is controlled separately.
@@ -109,3 +111,27 @@ Conventional Commits drive automatic semantic versioning and changelogs through 
 - [Security](SECURITY.md)
 
 Licensed under [MIT](LICENSE).
+
+### Light rhythms
+
+Keep the existing `static`, `blink`, `chase` and `wave` modes, or choose a synchronized controller rhythm:
+
+| Mode        | Rhythm at speed 1                                                        |
+| ----------- | ------------------------------------------------------------------------ |
+| `alternate` | Odd/even bulbs take turns every 600ms: 1-2-1-2.                          |
+| `pairs`     | Adjacent pairs take turns every 600ms: 1-1-2-2.                          |
+| `double`    | Two 180ms flashes per channel, with a pause before the other answers.    |
+| `steps`     | Four channels advance every 320ms.                                       |
+| `bounce`    | Four channels run forward and back, holding slightly longer at the ends. |
+| `fade`      | Four channels overlap in a gentle 2.4-second wave.                       |
+
+```js
+lights.update({ mode: 'pairs' });
+// All modes also work in patternSequence with patternOrder: 'cycle' or 'random'.
+```
+
+`speed`, `dimBase`, `animated` and `paused` apply to all rhythms. Reduced motion keeps them steady.
+
+Twinkle has been removed in 0.3.0. The default mode is `fade`. The preview names `double-beat`, `stepped-chase` and `crossfade` are now `double`, `steps` and `fade`.
+
+Curtain strands use equal cable lengths; their bottom offsets follow the header sag. Connected rows fit uniformly spaced bulbs across supports without skipping individual bulbs.

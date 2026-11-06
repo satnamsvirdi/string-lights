@@ -8,7 +8,7 @@ test('separate engine copies have unique material IDs and all shapes resolve the
     const second = await import('/core.js?copy=second');
     const host = document.getElementById('host');
     const a = first.createStringLights(host, {
-      shape: ['rice', 'round', 'flower', 'crystal', 'led'],
+      shape: ['rice', 'round', 'flower', 'crystal', 'led', 'heart'],
       breeze: false,
       glitter: true,
       dimBase: true,
@@ -38,7 +38,46 @@ test('separate engine copies have unique material IDs and all shapes resolve the
   expect(result.hostRetained).toBe(true);
   expect(result.hostRestored).toBe(true);
   expect(result.sharedSocket).toBe(true);
-  expect(result.shapes.sort()).toEqual(['crystal', 'flower', 'led', 'rice', 'round']);
+  expect(result.shapes.sort()).toEqual(['crystal', 'flower', 'heart', 'led', 'rice', 'round']);
   expect(result.petals).toBeGreaterThan(0);
   expect(result.petals % 5).toBe(0);
+});
+
+test('heart glass, glitter and dimmed materials render with an upright specimen', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { createStringLights, createBulbPreview } = await import('/core.js');
+    const lights = createStringLights('#host', {
+      shape: 'heart',
+      colors: ['#ff6b9d'],
+      glitter: true,
+      dimBase: true,
+      breeze: false,
+    });
+    const preview = createBulbPreview({ shape: 'heart', colors: ['#ff6b9d'], glitter: true });
+    document.body.append(preview);
+    const heart = lights.element.querySelector('[data-shape="heart"]');
+    const clip = [...lights.element.querySelectorAll('clipPath')].find((node) =>
+      node.id.endsWith('-heart-glass-clip'),
+    );
+    const shell = clip.querySelector('path');
+    return {
+      width: shell.getBBox().width,
+      height: shell.getBBox().height,
+      dim: !!heart.querySelector('[data-string-base="dim"]'),
+      flecks: heart.querySelectorAll('circle').length,
+      shape: preview.getAttribute('aria-label'),
+      upright: !preview.querySelector('g').getAttribute('transform').includes('180'),
+      count: lights.element.querySelectorAll('[data-shape="heart"]').length,
+    };
+  });
+  expect(result.width).toBeGreaterThan(16);
+  expect(result.height).toBeGreaterThan(16);
+  expect(result.dim).toBe(true);
+  expect(result.flecks).toBeGreaterThan(10);
+  expect(result.shape).toBe('heart glass bulb');
+  expect(result.upright).toBe(true);
+  expect(result.count).toBeGreaterThan(0);
 });

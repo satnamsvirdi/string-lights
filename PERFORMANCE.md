@@ -2,7 +2,7 @@
 
 ## Current release gates
 
-`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 12 KB gzip, geometry-only imports approximately 2.8 KB, bulb preview approximately 3.5 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version. Renderer/geometry budgets are now 13 KB/3 KB to cover the coupled cable solver, safeguarded near-taut constraints, terminal-wire clipping, and document-overlay measurement. Scroll-container measurement, soft contact, and drag stabilization bring the renderer to approximately 13 KB gzip without runtime dependencies.
+`npm run check` measures packed artifacts against `performance-budgets.json`. The renderer is approximately 13.9 KB gzip, geometry-only imports approximately 3.4 KB, bulb preview approximately 3.7 KB, and the React wrapper approximately 0.4 KB excluding its core dependency and React peer. The exact current measurements are generated in `artifacts/string-bundle-sizes.json`; gzip size depends slightly on the tool/runtime version. Renderer/geometry budgets are now 14.0 KB/3.5 KB to cover the coupled cable solver, safeguarded near-taut constraints, terminal-wire clipping, and document-overlay measurement. Scroll-container measurement, soft contact, and drag stabilization bring the renderer to approximately 13 KB gzip without runtime dependencies.
 
 Browser checks enforce that 300 equivalent option updates stay below a generous 500 ms CPU budget and make zero DOM mutations. They also cover a page of 12 decorations: only sections with a nonzero visible intersection animate, and scrolling resumes/pauses the appropriate instances. Separate tests assert zero animation-frame requests during quiet breeze periods, immediate wake on a grab, and complete offscreen suspension of frames, animation, and pattern timers. These behavioral gates are more stable than asserting a universal FPS on shared CI hardware.
 
@@ -22,7 +22,7 @@ The current implementation additionally:
 
 ## Historical before/after comparison
 
-Measured in local headless Chrome on November 3, 2026. This is a comparison on one machine, not a universal frame-rate guarantee. Fixture: 1200 × 600 curtain, 306 bulbs, 5,035 SVG descendants, mixed rice/round/crystal bulbs, animated twinkle, breeze disabled while measuring updates.
+Measured in local headless Chrome on November 3, 2026. This is a comparison on one machine, not a universal frame-rate guarantee. Fixture: 1200 × 600 curtain, 306 bulbs, 5,035 SVG descendants, mixed rice/round/crystal bulbs, animated fade, breeze disabled while measuring updates.
 
 | Operation                                          |                          Before |                                           After |
 | -------------------------------------------------- | ------------------------------: | ----------------------------------------------: |
@@ -45,3 +45,7 @@ Verification included geometry/physics tests, real mouse release and flicks, SSR
 Geometry/material edits still rebuild their instance. Large SVG installations still cost memory, paint, and animation work while visible. The renderer caps an instance at 600 bulbs; use wider spacing or disable breeze when decorating many visible sections. Intersections are cleared at rest, not collision-simulated during dragging. Existing bulb artwork and gravity behavior are preserved.
 
 Curtain attachment tracking adds explicit header ties and moving pin constraints, while unmanipulated drops keep their idle scheduling.
+
+The local heart bulb adds approximately 0.15 KB gzip for its glass shell and filament; uniform row fitting adds approximately 0.4 KB gzip. The renderer budget is 14.0 KB. Fitting is bounded by 600 bulbs and ten search trials and runs only when geometry changes.
+
+Six synchronized channel rhythms add approximately 0.45 KB gzip to the renderer. They use opacity-only Web Animations, one shared timeline origin per program and no animation-frame loop. Geometry-only and unused imports exclude the rhythm runtime.

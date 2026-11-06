@@ -27,13 +27,31 @@ var palettes = /* @__PURE__ */ Object.freeze({
   tricolor: /* @__PURE__ */ Object.freeze(["#ff9438", "#ffffff", "#32df75"])
 });
 var layouts = /* @__PURE__ */ Object.freeze(["roofline", "curtain", "draped", "border"]);
-var shapes = /* @__PURE__ */ Object.freeze(["rice", "round", "crystal", "flower", "led"]);
-var modes = /* @__PURE__ */ Object.freeze(["static", "blink", "chase", "twinkle", "wave"]);
+var shapes = /* @__PURE__ */ Object.freeze([
+  "rice",
+  "round",
+  "crystal",
+  "flower",
+  "led",
+  "heart"
+]);
+var modes = /* @__PURE__ */ Object.freeze([
+  "static",
+  "blink",
+  "chase",
+  "wave",
+  "alternate",
+  "pairs",
+  "double",
+  "steps",
+  "bounce",
+  "fade"
+]);
 var defaults = /* @__PURE__ */ Object.freeze({
   layout: "roofline",
   shape: "rice",
   colors: "multicolor",
-  mode: "twinkle",
+  mode: "fade",
   animated: true,
   spacing: 28,
   size: 1,
@@ -52,7 +70,7 @@ var defaults = /* @__PURE__ */ Object.freeze({
   pagePosition: "fixed",
   patternOrder: "fixed",
   patternInterval: 10,
-  patternSequence: /* @__PURE__ */ Object.freeze(["blink", "chase", "wave", "twinkle"])
+  patternSequence: /* @__PURE__ */ Object.freeze(["blink", "chase", "wave", "fade"])
 });
 function normalizeOptions(input = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input))
@@ -160,12 +178,12 @@ var stringLightsPresets = /* @__PURE__ */ Object.freeze({
   ),
   white: /* @__PURE__ */ preset(
     "White snowfall",
-    "White crystal curtain lights with a slow twinkle.",
+    "White crystal curtain lights with a slow fade.",
     {
       layout: "curtain",
       shape: "crystal",
       colors: "white",
-      mode: "twinkle",
+      mode: "fade",
       speed: 0.6,
       spacing: 36,
       glow: 0.5
@@ -195,7 +213,7 @@ var stringLightsPresets = /* @__PURE__ */ Object.freeze({
       spacing: 36,
       patternOrder: "cycle",
       patternInterval: 12,
-      patternSequence: ["twinkle", "wave", "static"]
+      patternSequence: ["fade", "wave", "static"]
     }
   ),
   tricolor: /* @__PURE__ */ preset(
@@ -227,6 +245,68 @@ var stringLightsPresets = /* @__PURE__ */ Object.freeze({
   )
 });
 
+// src/core/spacing.js
+var envelopes = {
+  flower: [-13, -4, 14, 23],
+  round: [-7, -2, 7, 17],
+  heart: [-10, -2, 10, 21],
+  crystal: [-6, -2, 6, 20]
+};
+var bulbEnvelope = (shape) => envelopes[shape] || [-4, -2, 4, 19];
+function sampleChain(wires, spacing, limit) {
+  const slots = [];
+  let distance = 0, next = spacing / 2;
+  for (let wire = 0; wire < wires.length; wire++) {
+    const points = wires[wire];
+    for (let i = 1; i < points.length && slots.length < limit; i++) {
+      const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.y - a.y);
+      while (next <= distance + length && slots.length < limit) {
+        const t = (next - distance) / Math.max(length, 1e-12);
+        slots.push({
+          wire,
+          segment: i - 1,
+          t,
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t,
+          mobility: a.mobility + (b.mobility - a.mobility) * t
+        });
+        next += spacing;
+      }
+      distance += length;
+    }
+  }
+  return slots;
+}
+function fitSpacing(wires, options, limit) {
+  if (!limit) return [];
+  const bounds = (Array.isArray(options.shape) ? options.shape : [options.shape]).map(bulbEnvelope);
+  const width = (Math.max(...bounds.map((b) => b[2])) - Math.min(...bounds.map((b) => b[0]))) * options.size + 6;
+  const height = (Math.max(...bounds.map((b) => b[3])) - Math.min(...bounds.map((b) => b[1]))) * options.size + 6;
+  const length = wires.reduce(
+    (sum, points) => sum + points.slice(1).reduce((total, p, i) => total + Math.hypot(p.x - points[i].x, p.y - points[i].y), 0),
+    0
+  );
+  const sample = (count2) => sampleChain(wires, length / count2, count2);
+  const fits = (slots) => {
+    for (let i = 0; i < slots.length; i++)
+      for (let j = i + 1; j < slots.length && slots[j].x - slots[i].x < width - 1e-7; j++)
+        if (Math.abs(slots[j].y - slots[i].y) < height - 1e-7) return false;
+    return true;
+  };
+  const count = Math.min(limit, Math.max(1, Math.floor(length / options.spacing)));
+  const initial = sample(count);
+  if (fits(initial)) return initial;
+  let low = 1, high = count - 1, best = sample(1);
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2), slots = sample(middle);
+    if (fits(slots)) {
+      best = slots;
+      low = middle + 1;
+    } else high = middle - 1;
+  }
+  return best;
+}
+
 // src/core/geometry.js
 var MAX_BULBS = 600;
 var MAX_WIRE_SEGMENTS = 128;
@@ -237,32 +317,20 @@ function createGeometry(width, height, input = {}) {
     throw new RangeError("Geometry dimensions cannot exceed 1,000,000 CSS pixels.");
   const o = normalizeOptions(input), rand = random(o.seed), wires = [], freeEnds = /* @__PURE__ */ new Set(), bulbs = [];
   if (!(width > 0 && height > 0)) return { wires, bulbs };
+  const addBulb = (slot, angle) => bulbs.push({
+    ...slot,
+    angle,
+    shape: Array.isArray(o.shape) ? o.shape[bulbs.length % o.shape.length] : o.shape,
+    color: o.colors[bulbs.length % o.colors.length],
+    phase: rand(),
+    group: bulbs.length % 4
+  });
   const add = (points, angle = 0, freeEnd = false) => {
     const wire = wires.length;
     wires.push(points);
     if (freeEnd) freeEnds.add(wire);
-    let distance = 0, next = o.spacing * 0.5;
-    for (let i = 1; i < points.length && bulbs.length < MAX_BULBS; i++) {
-      const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.y - a.y);
-      while (next <= distance + length && bulbs.length < MAX_BULBS) {
-        const t = (next - distance) / Math.max(length, 1e-3);
-        bulbs.push({
-          x: a.x + (b.x - a.x) * t,
-          y: a.y + (b.y - a.y) * t,
-          mobility: a.mobility + (b.mobility - a.mobility) * t,
-          wire,
-          segment: i - 1,
-          t,
-          angle,
-          shape: Array.isArray(o.shape) ? o.shape[bulbs.length % o.shape.length] : o.shape,
-          color: o.colors[bulbs.length % o.colors.length],
-          phase: rand(),
-          group: bulbs.length % 4
-        });
-        next += o.spacing;
-      }
-      distance += length;
-    }
+    for (const slot of sampleChain([points], o.spacing, MAX_BULBS - bulbs.length))
+      addBulb({ ...slot, wire }, angle);
   };
   const swag = (y, waves = o.anchorCount || 2, sag = o.sag) => {
     const span = width / waves, depth = Math.min(sag, height * 0.25);
@@ -273,9 +341,10 @@ function createGeometry(width, height, input = {}) {
       else hi = a2;
     }
     const a = hi;
+    const row = [];
     for (let k = -1; k < waves; k++) {
       const left = (k + 0.5) * span, n = Math.min(MAX_WIRE_SEGMENTS, Math.max(16, Math.ceil(span / 12)));
-      add(
+      row.push(
         Array.from({ length: n + 1 }, (_, i) => {
           const u = i / n, x = left + span * u;
           return {
@@ -286,6 +355,10 @@ function createGeometry(width, height, input = {}) {
         })
       );
     }
+    const start = wires.length;
+    wires.push(...row);
+    for (const slot of fitSpacing(row, o, MAX_BULBS - bulbs.length))
+      addBulb({ ...slot, wire: start + slot.wire }, 0);
   };
   if (o.layout === "roofline") swag(12);
   if (o.layout === "draped")
@@ -294,31 +367,39 @@ function createGeometry(width, height, input = {}) {
     swag(12);
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
+    const anchors = [];
     for (let i = 0; i + 1 < headerBulbs.length; i += 2) {
       const x = (headerBulbs[i].x + headerBulbs[i + 1].x) / 2;
       if (x < 10 || x > width - 10) continue;
       const header = headerWires.find((points) => x >= points[0].x && x <= points.at(-1).x);
       const segment = header.findIndex((point, j) => j > 0 && point.x >= x);
       const a = header[segment - 1], b = header[segment];
-      const y = a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
-      const length = Math.max(20, (height - 40) * (0.4 + rand() * 0.6));
-      const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil(length / 12)));
-      add(
-        Array.from({ length: n + 1 }, (_, j) => ({
-          x,
-          y: y + length * j / n,
-          mobility: (j / n) ** 2,
-          ...j === 0 ? {
-            attachment: {
-              wire: headerWires.indexOf(header),
-              segment: segment - 1,
-              t: (x - a.x) / (b.x - a.x)
-            }
-          } : {}
-        })),
-        0,
-        true
+      const t = (x - a.x) / (b.x - a.x);
+      anchors.push({
+        x,
+        y: a.y + (b.y - a.y) * t,
+        attachment: { wire: headerWires.indexOf(header), segment: segment - 1, t }
+      });
+    }
+    if (anchors.length) {
+      const length = Math.min(
+        Math.max(20, height - 40 - Math.max(...anchors.map((p) => p.y))),
+        Math.floor((MAX_BULBS - bulbs.length) / anchors.length) * o.spacing
       );
+      const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil(length / 12)));
+      if (length > 0)
+        for (const { x, y, attachment } of anchors) {
+          add(
+            Array.from({ length: n + 1 }, (_, j) => ({
+              x,
+              y: y + length * j / n,
+              mobility: (j / n) ** 2,
+              ...j === 0 ? { attachment } : {}
+            })),
+            0,
+            true
+          );
+        }
     }
   }
   if (o.layout === "border") {
@@ -381,7 +462,7 @@ function clearBulbOverlaps(bulbs, o) {
   const cellSize = 64;
   for (const bulb of bulbs) {
     if (Array.isArray(o.shape)) bulb.shape = o.shape[accepted.length % o.shape.length];
-    const envelope = bulb.shape === "flower" ? [-13, -4, 14, 23] : bulb.shape === "round" ? [-7, -2, 7, 17] : bulb.shape === "crystal" ? [-6, -2, 6, 20] : [-4, -2, 4, 19];
+    const envelope = bulbEnvelope(bulb.shape);
     const radians = bulb.angle * Math.PI / 180, cos = Math.cos(radians), sin = Math.sin(radians);
     const corners = [
       [envelope[0], envelope[1]],
@@ -409,7 +490,7 @@ function clearBulbOverlaps(bulbs, o) {
       }
     }
     if ([...neighbors].some(
-      (other) => bounds.left < other.right && bounds.right > other.left && bounds.top < other.bottom && bounds.bottom > other.top
+      (other) => bounds.left < other.right - 1e-7 && bounds.right > other.left + 1e-7 && bounds.top < other.bottom - 1e-7 && bounds.bottom > other.top + 1e-7
     ))
       continue;
     bulb.color = o.colors[accepted.length % o.colors.length];
@@ -823,6 +904,62 @@ function createInteraction(state) {
   };
 }
 
+// src/core/rhythms.js
+var programs = {
+  alternate: [
+    [0, 600],
+    [1, 600]
+  ],
+  pairs: [
+    [0, 600],
+    [1, 600]
+  ],
+  double: [
+    [0, 180],
+    [-1, 180],
+    [0, 180],
+    [-1, 420],
+    [1, 180],
+    [-1, 180],
+    [1, 180],
+    [-1, 420]
+  ],
+  steps: /* @__PURE__ */ [0, 1, 2, 3].map((channel) => [channel, 320]),
+  bounce: /* @__PURE__ */ [0, 1, 2, 3, 2, 1].map((channel) => [
+    channel,
+    channel === 0 || channel === 3 ? 420 : 300
+  ])
+};
+function rhythmFrames(mode, index, dimBase) {
+  const low = dimBase ? 0.02 : 0.04;
+  if (mode === "fade") {
+    const channel2 = index % 4;
+    const frames2 = [0, 1, 2, 3].map((step) => {
+      const distance = Math.min((channel2 - step + 4) % 4, (step - channel2 + 4) % 4);
+      return { offset: step / 4, opacity: distance === 0 ? 1 : distance === 1 ? 0.3 : low };
+    });
+    return { frames: [...frames2, { ...frames2[0], offset: 1 }], duration: 2400 };
+  }
+  const steps = programs[mode];
+  if (!steps) return null;
+  const channel = mode === "pairs" ? Math.floor(index / 2) % 2 : index % (mode === "alternate" || mode === "double" ? 2 : 4);
+  const duration = steps.reduce((sum, [, time2]) => sum + time2, 0);
+  const frames = [];
+  let time = 0;
+  steps.forEach(([active, hold], step) => {
+    const opacity = active === channel ? 1 : low;
+    const next = steps[(step + 1) % steps.length][0] === channel ? 1 : low;
+    const edge = Math.min(35, hold * 0.12);
+    frames.push(
+      { offset: time / duration, opacity },
+      { offset: (time + hold - edge) / duration, opacity },
+      { offset: (time + hold) / duration, opacity: next }
+    );
+    time += hold;
+  });
+  return { frames, duration };
+}
+
 // src/core/state.js
 var isInactive = (state) => state.destroyed || state.options.paused || state.doc.hidden || !state.visible || state.width === 0 || state.height === 0;
 
@@ -866,20 +1003,15 @@ function createLighting(state) {
     animationSpeed = state.options.speed;
     animations.forEach((a) => a.cancel());
     animations = [];
+    const origin = svg.ownerDocument.timeline.currentTime;
     for (const [index, { light, bulb }] of state.bulbs.entries()) {
       if (mode === "static" || !state.options.animated || media.matches || !light.animate) continue;
       let frames, duration = 4e3 / state.options.speed, delay = 0;
       const low = state.options.dimBase ? 0.02 : 0.2;
-      if (mode === "twinkle") {
-        frames = [
-          { opacity: 1 },
-          { opacity: state.options.dimBase ? low : 0.45, offset: 0.35 },
-          { opacity: 0.85, offset: 0.5 },
-          { opacity: state.options.dimBase ? 0.03 : 0.6, offset: 0.7 },
-          { opacity: 1 }
-        ];
-        duration = 3e3 / state.options.speed * (1 + bulb.phase * 0.6);
-        delay = -bulb.phase * duration;
+      const rhythm = rhythmFrames(mode, index, state.options.dimBase);
+      if (rhythm) {
+        frames = rhythm.frames;
+        duration = rhythm.duration / state.options.speed;
       } else if (mode === "wave") {
         frames = [{ opacity: low }, { opacity: 1 }, { opacity: low }];
         delay = -index * 130;
@@ -893,6 +1025,7 @@ function createLighting(state) {
         iterations: Infinity,
         easing: "linear"
       });
+      if (rhythm && origin !== null) animation.startTime = origin;
       if (isInactive(state)) animation.pause();
       animations.push(animation);
     }
@@ -1156,10 +1289,12 @@ var BULB_OUTLINES = {
   rice: "M0 3C-5 3-4.4 13.2 0 18C4.4 13.2 5 3 0 3Z",
   round: "M0 3a6.4 6.4 0 1 0 0 12.8a6.4 6.4 0 1 0 0-12.8Z",
   led: "M-3.6 15V7a3.6 3.6 0 0 1 7.2 0v8Z",
+  heart: "M0 6C-3-1-11 2-9 9C-8 13-3 17 0 20C3 17 8 13 9 9C11 2 3-1 0 6Z",
   crystal: "M0 3 5.7 8.5 4 14 0 19 -4 14 -5.7 8.5Z",
   flower: "M0 5C-7-6-12 4-5 8C-17 9-10 19-3 13C-2 24 7 22 5 13C16 18 17 7 7 7C14-2 2-6 0 5Z"
 };
 var FLOWER_PETAL = "M0 10.7C-1.4 9.4-4.2 7-3.6 4.9C-2.9 1.5 2.9 1.5 3.6 4.9C4.2 7 1.4 9.4 0 10.7Z";
+var HEART_FILAMENT = "M-.9 5.5V9.2C-4.5 5.5-7.4 9.3-4.5 12.2L0 16.5L4.5 12.2C7.4 9.3 4.5 5.5 .9 9.2V5.5";
 function materialDefinitions(doc, defs, id, colors, shape) {
   const shapes2 = Array.isArray(shape) ? shape : [shape];
   const gradient = (type, name, attributes, stops) => {
@@ -1264,7 +1399,7 @@ function bulbArtwork(doc, parent, id, index, options) {
     doc,
     "path",
     {
-      d: "M-1.1 5.2V11Q0 13 1.1 11V5.2",
+      d: options.shape === "heart" ? HEART_FILAMENT : "M-1.1 5.2V11Q0 13 1.1 11V5.2",
       fill: "none",
       stroke: color,
       "stroke-width": 1.5,
@@ -1276,7 +1411,7 @@ function bulbArtwork(doc, parent, id, index, options) {
     doc,
     "path",
     {
-      d: "M-0.7 5.5V11Q0 12.2 0.7 11V5.5",
+      d: options.shape === "heart" ? HEART_FILAMENT : "M-0.7 5.5V11Q0 12.2 0.7 11V5.5",
       fill: "none",
       stroke: "#fffbe8",
       "stroke-width": 0.5,
@@ -1322,7 +1457,7 @@ function bulbArtwork(doc, parent, id, index, options) {
       doc,
       "path",
       {
-        d: "M-1.6 4.5Q-3.2 8-1.5 12",
+        d: options.shape === "heart" ? "M-6.8 5.2C-8 7.8-6 10.9-3.8 13.5" : "M-1.6 4.5Q-3.2 8-1.5 12",
         fill: "none",
         stroke: "#fff",
         "stroke-opacity": 0.75,
@@ -1838,7 +1973,12 @@ function createBulbPreview(input = {}) {
   });
   const defs = svgNode(doc, "defs", {}, svg);
   materialDefinitions(doc, defs, id, options.colors, options.shape);
-  const group = svgNode(doc, "g", { transform: "translate(0 18) rotate(180)" }, svg);
+  const group = svgNode(
+    doc,
+    "g",
+    { transform: options.shape === "heart" ? "translate(0 -2)" : "translate(0 18) rotate(180)" },
+    svg
+  );
   bulbArtwork(doc, group, id, 0, options);
   return svg;
 }

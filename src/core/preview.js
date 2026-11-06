@@ -14,7 +14,12 @@ export function createBulbPreview(input = {}) {
   });
   const defs = svgNode(doc, 'defs', {}, svg);
   materialDefinitions(doc, defs, id, options.colors, options.shape);
-  const group = svgNode(doc, 'g', { transform: 'translate(0 18) rotate(180)' }, svg);
+  const group = svgNode(
+    doc,
+    'g',
+    { transform: options.shape === 'heart' ? 'translate(0 -2)' : 'translate(0 18) rotate(180)' },
+    svg,
+  );
   bulbArtwork(doc, group, id, 0, options);
   return svg;
 }

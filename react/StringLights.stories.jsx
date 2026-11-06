@@ -3,7 +3,7 @@ import StringLights from './StringLights.jsx';
 export default {
   title: 'Effects/StringLights',
   component: StringLights,
-  args: { options: { mode: 'twinkle', colors: 'multicolor' } },
+  args: { options: { mode: 'fade', colors: 'multicolor' } },
 };
 export const Component = {
   render: (args) => (
@@ -30,7 +30,7 @@ export const FullPage = {
 export const MixedBulbs = {
   ...Component,
   args: {
-    options: { shape: ['rice', 'round', 'flower', 'crystal'], mode: 'twinkle', dimBase: true },
+    options: { shape: ['rice', 'round', 'flower', 'crystal'], mode: 'fade', dimBase: true },
   },
 };
 export const TimedPatterns = {
@@ -40,7 +40,7 @@ export const TimedPatterns = {
       shape: ['rice', 'round'],
       patternOrder: 'cycle',
       patternInterval: 3,
-      patternSequence: ['blink', 'chase', 'wave', 'twinkle'],
+      patternSequence: ['blink', 'chase', 'wave', 'fade'],
     },
   },
 };
@@ -74,7 +74,7 @@ export const IndependentStrings = {
           colors: 'white',
           patternOrder: 'cycle',
           patternInterval: 5,
-          patternSequence: ['wave', 'twinkle', 'blink'],
+          patternSequence: ['wave', 'fade', 'blink'],
         }}
         style={{ minHeight: 320, padding: 72, background: '#1b1b1b', color: '#eee' }}
       >

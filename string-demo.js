@@ -7,7 +7,7 @@ import {
 } from './StringLights.js';
 const $ = (id) => document.getElementById(id);
 const defaults = {
-  mode: 'twinkle',
+  mode: 'fade',
   animated: true,
   pagePosition: 'absolute',
   colors: 'multicolor',
@@ -26,7 +26,7 @@ const defaults = {
   paused: false,
   patternOrder: 'fixed',
   patternInterval: 10,
-  patternSequence: ['blink', 'chase', 'wave', 'twinkle'],
+  patternSequence: ['blink', 'chase', 'wave', 'fade'],
 };
 const records = [];
 let selected,
@@ -213,7 +213,7 @@ for (const mode of modes) {
     ...defaults,
     layout,
     seed: 7 + index,
-    mode: ['twinkle', 'wave', 'twinkle', 'chase'][index],
+    mode: ['fade', 'wave', 'fade', 'chase'][index],
   };
   if (layout === 'draped') options.colors = 'warm';
   add(sample, options, ['Roofline', 'Curtain', 'Draped', 'Component border'][index]);
@@ -369,7 +369,13 @@ for (const [index, shape] of [...shapes, 'glitter'].entries()) {
     createBulbPreview({
       shape: shape === 'glitter' ? 'rice' : shape,
       glitter: shape === 'glitter',
-      colors: [specimenColors[index]],
+      colors: [
+        shape === 'heart'
+          ? '#ff6b9d'
+          : shape === 'glitter'
+            ? '#ffc329'
+            : specimenColors[index % specimenColors.length],
+      ],
       glow: 0.8,
     }),
   );

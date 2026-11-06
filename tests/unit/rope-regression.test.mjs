@@ -123,7 +123,7 @@ test('a wide drape settles back after repeated local drags without changing its 
 
 test('all free wire tips end exactly at the final accepted bulb, including overlap removal', () => {
   for (const layout of layouts)
-    for (const shape of ['rice', 'flower', 'round', 'crystal', 'led'])
+    for (const shape of ['rice', 'flower', 'round', 'crystal', 'led', 'heart'])
       for (const spacing of [16, 28, 75, 100]) {
         const geometry = createGeometry(700, 400, { layout, shape, spacing, size: 2.5 });
         geometry.wires.forEach((wire, index) => {

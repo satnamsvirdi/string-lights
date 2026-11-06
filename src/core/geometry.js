@@ -1,5 +1,6 @@
 import { normalizeOptions } from './options.js';
 import { random } from './utils.js';
+import { sampleChain, fitSpacing, bulbEnvelope } from './spacing.js';
 const MAX_BULBS = 600;
 const MAX_WIRE_SEGMENTS = 128;
 /** Pure geometry, also useful for custom renderers. Coordinates are CSS pixels. */
@@ -14,35 +15,21 @@ export function createGeometry(width, height, input = {}) {
     freeEnds = new Set(),
     bulbs = [];
   if (!(width > 0 && height > 0)) return { wires, bulbs };
+  const addBulb = (slot, angle) =>
+    bulbs.push({
+      ...slot,
+      angle,
+      shape: Array.isArray(o.shape) ? o.shape[bulbs.length % o.shape.length] : o.shape,
+      color: o.colors[bulbs.length % o.colors.length],
+      phase: rand(),
+      group: bulbs.length % 4,
+    });
   const add = (points, angle = 0, freeEnd = false) => {
     const wire = wires.length;
     wires.push(points);
     if (freeEnd) freeEnds.add(wire);
-    let distance = 0,
-      next = o.spacing * 0.5;
-    for (let i = 1; i < points.length && bulbs.length < MAX_BULBS; i++) {
-      const a = points[i - 1],
-        b = points[i],
-        length = Math.hypot(b.x - a.x, b.y - a.y);
-      while (next <= distance + length && bulbs.length < MAX_BULBS) {
-        const t = (next - distance) / Math.max(length, 0.001);
-        bulbs.push({
-          x: a.x + (b.x - a.x) * t,
-          y: a.y + (b.y - a.y) * t,
-          mobility: a.mobility + (b.mobility - a.mobility) * t,
-          wire,
-          segment: i - 1,
-          t,
-          angle,
-          shape: Array.isArray(o.shape) ? o.shape[bulbs.length % o.shape.length] : o.shape,
-          color: o.colors[bulbs.length % o.colors.length],
-          phase: rand(),
-          group: bulbs.length % 4,
-        });
-        next += o.spacing;
-      }
-      distance += length;
-    }
+    for (const slot of sampleChain([points], o.spacing, MAX_BULBS - bulbs.length))
+      addBulb({ ...slot, wire }, angle);
   };
   const swag = (y, waves = o.anchorCount || 2, sag = o.sag) => {
     // Continue a half-span beyond both edges: no exposed cable ends in the viewport.
@@ -56,10 +43,11 @@ export function createGeometry(width, height, input = {}) {
       else hi = a;
     }
     const a = hi;
+    const row = [];
     for (let k = -1; k < waves; k++) {
       const left = (k + 0.5) * span,
         n = Math.min(MAX_WIRE_SEGMENTS, Math.max(16, Math.ceil(span / 12)));
-      add(
+      row.push(
         Array.from({ length: n + 1 }, (_, i) => {
           const u = i / n,
             x = left + span * u;
@@ -75,6 +63,10 @@ export function createGeometry(width, height, input = {}) {
         }),
       );
     }
+    const start = wires.length;
+    wires.push(...row);
+    for (const slot of fitSpacing(row, o, MAX_BULBS - bulbs.length))
+      addBulb({ ...slot, wire: start + slot.wire }, 0);
   };
   if (o.layout === 'roofline') swag(12);
   if (o.layout === 'draped')
@@ -84,6 +76,7 @@ export function createGeometry(width, height, input = {}) {
     // Attach drops midway between the bulbs that actually fit on the header.
     const headerWires = [...wires];
     const headerBulbs = clearBulbOverlaps(bulbs, o).sort((a, b) => a.x - b.x);
+    const anchors = [];
     for (let i = 0; i + 1 < headerBulbs.length; i += 2) {
       const x = (headerBulbs[i].x + headerBulbs[i + 1].x) / 2;
       if (x < 10 || x > width - 10) continue;
@@ -91,27 +84,33 @@ export function createGeometry(width, height, input = {}) {
       const segment = header.findIndex((point, j) => j > 0 && point.x >= x);
       const a = header[segment - 1],
         b = header[segment];
-      const y = a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
-      const length = Math.max(20, (height - 40) * (0.4 + rand() * 0.6));
-      const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil(length / 12)));
-      add(
-        Array.from({ length: n + 1 }, (_, j) => ({
-          x,
-          y: y + (length * j) / n,
-          mobility: (j / n) ** 2,
-          ...(j === 0
-            ? {
-                attachment: {
-                  wire: headerWires.indexOf(header),
-                  segment: segment - 1,
-                  t: (x - a.x) / (b.x - a.x),
-                },
-              }
-            : {}),
-        })),
-        0,
-        true,
+      const t = (x - a.x) / (b.x - a.x);
+      anchors.push({
+        x,
+        y: a.y + (b.y - a.y) * t,
+        attachment: { wire: headerWires.indexOf(header), segment: segment - 1, t },
+      });
+    }
+    if (anchors.length) {
+      // Equal cable lengths follow the header's sag. Share the bulb budget across every drop.
+      const length = Math.min(
+        Math.max(20, height - 40 - Math.max(...anchors.map((p) => p.y))),
+        Math.floor((MAX_BULBS - bulbs.length) / anchors.length) * o.spacing,
       );
+      const n = Math.min(MAX_WIRE_SEGMENTS, Math.max(2, Math.ceil(length / 12)));
+      if (length > 0)
+        for (const { x, y, attachment } of anchors) {
+          add(
+            Array.from({ length: n + 1 }, (_, j) => ({
+              x,
+              y: y + (length * j) / n,
+              mobility: (j / n) ** 2,
+              ...(j === 0 ? { attachment } : {}),
+            })),
+            0,
+            true,
+          );
+        }
     }
   }
   if (o.layout === 'border') {
@@ -180,14 +179,7 @@ function clearBulbOverlaps(bulbs, o) {
   for (const bulb of bulbs) {
     // Retry a crowded shape at the next attachment rather than omitting it from the mix.
     if (Array.isArray(o.shape)) bulb.shape = o.shape[accepted.length % o.shape.length];
-    const envelope =
-      bulb.shape === 'flower'
-        ? [-13, -4, 14, 23]
-        : bulb.shape === 'round'
-          ? [-7, -2, 7, 17]
-          : bulb.shape === 'crystal'
-            ? [-6, -2, 6, 20]
-            : [-4, -2, 4, 19];
+    const envelope = bulbEnvelope(bulb.shape);
     const radians = (bulb.angle * Math.PI) / 180,
       cos = Math.cos(radians),
       sin = Math.sin(radians);
@@ -227,10 +219,10 @@ function clearBulbOverlaps(bulbs, o) {
     if (
       [...neighbors].some(
         (other) =>
-          bounds.left < other.right &&
-          bounds.right > other.left &&
-          bounds.top < other.bottom &&
-          bounds.bottom > other.top,
+          bounds.left < other.right - 1e-7 &&
+          bounds.right > other.left + 1e-7 &&
+          bounds.top < other.bottom - 1e-7 &&
+          bounds.bottom > other.top + 1e-7,
       )
     )
       continue;

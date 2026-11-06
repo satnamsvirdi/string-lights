@@ -102,7 +102,7 @@ test('scrolling page overlays align with the document even when the body has mar
   expect(await page.evaluate(() => lights.element.getBoundingClientRect().top)).toBe(-300);
 });
 
-test('subtle twinkle is the default and a click handler can disable and restore it without remounting', async ({
+test('subtle fade is the default and a click handler can disable and restore it without remounting', async ({
   page,
 }) => {
   await page.goto('/');
@@ -121,7 +121,7 @@ test('subtle twinkle is the default and a click handler can disable and restore 
       ),
     )
     .toBe(true);
-  expect(await page.evaluate(() => lights.pattern)).toBe('twinkle');
+  expect(await page.evaluate(() => lights.pattern)).toBe('fade');
   await page.locator('#content').click();
   expect(await page.evaluate(() => lights.element.getAnimations({ subtree: true }).length)).toBe(0);
   expect(
@@ -141,6 +141,7 @@ test('disabled animation holds the selected program instead of cycling invisibly
   page,
 }) => {
   await page.goto('/');
+  await page.clock.install();
   await page.evaluate(async () => {
     const { createStringLights } = await import('/core.js');
     window.lights = createStringLights('#host', {
@@ -151,11 +152,12 @@ test('disabled animation holds the selected program instead of cycling invisibly
       patternSequence: ['blink', 'wave'],
     });
   });
-  await page.waitForTimeout(1200);
+  await page.clock.runFor(1200);
   expect(await page.evaluate(() => lights.pattern)).toBe('blink');
   expect(await page.evaluate(() => lights.element.getAnimations({ subtree: true }).length)).toBe(0);
   await page.evaluate(() => lights.update({ animated: true }));
-  await expect.poll(() => page.evaluate(() => lights.pattern), { timeout: 2500 }).toBe('wave');
+  await page.clock.runFor(1050);
+  expect(await page.evaluate(() => lights.pattern)).toBe('wave');
 });
 
 test('document overlays scroll, track growing and shrinking pages, and coexist with fixed overlays', async ({

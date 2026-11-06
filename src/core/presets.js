@@ -46,12 +46,12 @@ export const stringLightsPresets = /* @__PURE__ */ Object.freeze({
   ),
   white: /* @__PURE__ */ preset(
     'White snowfall',
-    'White crystal curtain lights with a slow twinkle.',
+    'White crystal curtain lights with a slow fade.',
     {
       layout: 'curtain',
       shape: 'crystal',
       colors: 'white',
-      mode: 'twinkle',
+      mode: 'fade',
       speed: 0.6,
       spacing: 36,
       glow: 0.5,
@@ -81,7 +81,7 @@ export const stringLightsPresets = /* @__PURE__ */ Object.freeze({
       spacing: 36,
       patternOrder: 'cycle',
       patternInterval: 12,
-      patternSequence: ['twinkle', 'wave', 'static'],
+      patternSequence: ['fade', 'wave', 'static'],
     },
   ),
   tricolor: /* @__PURE__ */ preset(

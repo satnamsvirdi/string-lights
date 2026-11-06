@@ -1,14 +1,25 @@
 export type StringLayout = 'roofline' | 'curtain' | 'draped' | 'border';
-export type StringShape = 'rice' | 'round' | 'crystal' | 'flower' | 'led';
-export type StringMode = 'static' | 'blink' | 'chase' | 'twinkle' | 'wave';
+export type StringShape = 'rice' | 'round' | 'crystal' | 'flower' | 'led' | 'heart';
+export type StringMode =
+  | 'static'
+  | 'blink'
+  | 'chase'
+  | 'wave'
+  | 'alternate'
+  | 'pairs'
+  | 'double'
+  | 'steps'
+  | 'bounce'
+  | 'fade';
 export type StringPalette = 'multicolor' | 'electric' | 'warm' | 'white' | 'tricolor';
 export interface StringOptions {
   layout?: StringLayout;
   shape?: StringShape | readonly StringShape[];
   colors?: StringPalette | readonly string[];
   mode?: StringMode;
-  /** Subtle twinkle is enabled by default. Disable light animation without losing the selected pattern. */
+  /** Gentle fading is enabled by default. Disable light animation without losing the selected pattern. */
   animated?: boolean;
+  /** Minimum distance along the wire; connected rows fit a uniform pitch to keep bulbs apart. */
   spacing?: number;
   size?: number;
   sag?: number;

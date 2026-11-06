@@ -135,7 +135,7 @@ test('border sides face inward while top and curtain bulbs hang down', () => {
 
 test('junctions keep physical bulb cores separate across layouts and scales', () => {
   for (const layout of layouts)
-    for (const shape of ['rice', 'round', 'crystal', 'flower', 'led'])
+    for (const shape of ['rice', 'round', 'crystal', 'flower', 'led', 'heart'])
       for (const size of [1, 2.5]) {
         const { bulbs } = createGeometry(280, 180, { layout, shape, size, spacing: 16 });
         // A small rectangle within each glass envelope, excluding its soft glow.
@@ -215,7 +215,7 @@ test('mixed bulb arrays and pattern programs validate and remain isolated', () =
     patternInterval: 3,
   });
   a.shape.push('led');
-  a.patternSequence.push('twinkle');
+  a.patternSequence.push('fade');
   assert.deepEqual(shape, ['rice', 'round', 'flower']);
   assert.deepEqual(sequence, ['blink', 'wave', 'chase']);
   for (const options of [

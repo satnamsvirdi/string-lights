@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0 (2026-11-06)
+
+### Breaking change
+
+- Remove `twinkle`; use `fade` instead. `fade` is now the default mode. Replace `twinkle` in `mode` and `patternSequence` before upgrading.
+
+### Features
+
+- Add heart-shaped glass bulbs, heart filaments, mixed-shape support, glitter and previews.
+- Add synchronized `alternate`, `pairs`, `double`, `steps`, `bounce` and `fade` rhythms. Speed, pause, dim base, reduced motion and timed/random switching work with every mode.
+
+### Fixes
+
+- Keep one uniform bulb pitch along connected curves and across supports. Fit wide bulbs across the whole row instead of creating skipped-bulb gaps.
+- Give hanging curtain strands equal cable lengths that follow header sag. Share the bulb budget evenly so the last strand is not cut short.
+- Preserve clearance at exact spacing despite floating-point rounding.
+
 ## 0.2.0
 
 - Add `anchorCount` to customize the number of top attachment points without changing sag; zero retains layout defaults.

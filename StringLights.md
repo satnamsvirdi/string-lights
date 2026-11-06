@@ -16,7 +16,7 @@ const balcony = createStringLights('#balcony', {
   dimBase: true,
   patternOrder: 'random',
   patternInterval: 8,
-  patternSequence: ['blink', 'chase', 'wave', 'twinkle'],
+  patternSequence: ['blink', 'chase', 'wave', 'fade'],
   seed: 17,
 });
 
@@ -26,7 +26,7 @@ const doorway = createStringLights('#doorway', {
   colors: 'white',
   patternOrder: 'cycle',
   patternInterval: 12,
-  patternSequence: ['wave', 'twinkle', 'blink'],
+  patternSequence: ['wave', 'fade', 'blink'],
 });
 
 balcony.pause(); // Doorway continues independently.
@@ -76,7 +76,7 @@ function Celebration() {
           colors: 'multicolor',
           patternOrder: 'random',
           patternInterval: 8,
-          patternSequence: ['blink', 'wave', 'twinkle'],
+          patternSequence: ['blink', 'wave', 'fade'],
           seed: 17,
         }}
         style={{ minHeight: 320 }}
@@ -98,29 +98,29 @@ Use `fullPage` for a viewport decoration. The wrapper forwards div attributes, `
 
 ## Options
 
-| Option            | Default                                 | Values                                                                                                                                              |
-| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout`          | `roofline`                              | `roofline`, `curtain`, `draped`, `border`                                                                                                           |
-| `shape`           | `rice`                                  | `rice`, `round`, `crystal`, `flower`, `led`, or a nonempty array of these shapes                                                                    |
-| `colors`          | `multicolor`                            | `multicolor` (includes white), `electric` (photo-inspired red/green/blue/yellow/cool white), `white`, `warm`, `tricolor`, or an array of hex colors |
-| `mode`            | `twinkle`                               | `static`, `blink`, `chase`, `twinkle`, `wave`; used with a fixed pattern                                                                            |
-| `animated`        | `true`                                  | Light animation switch; false keeps steady bulbs and preserves the chosen pattern                                                                   |
-| `pagePosition`    | `fixed`                                 | Body/document overlays: `fixed` stays on screen; `absolute` scrolls with the document                                                               |
-| `patternOrder`    | `fixed`                                 | `fixed`, `cycle`, `random`                                                                                                                          |
-| `patternInterval` | `10`                                    | Seconds between pattern changes, clamped to 1–3600                                                                                                  |
-| `patternSequence` | `['blink', 'chase', 'wave', 'twinkle']` | A nonempty array of distinct valid pattern names; can include `static`                                                                              |
-| `dimBase`         | `false`                                 | Darken idle glass and deepen animation dim phases                                                                                                   |
-| `glitter`         | `false`                                 | Flecks inside the glass and occasional star glints                                                                                                  |
-| `spacing`         | `28`                                    | Requested attachment spacing in CSS pixels, clamped to 16–100                                                                                       |
-| `size`            | `1`                                     | Bulb scale, clamped to 0.5–2.5                                                                                                                      |
-| `sag`             | `48`                                    | Swag depth in CSS pixels, clamped to 0–140 and fitted to target height                                                                              |
-| `speed`           | `1`                                     | Lighting-animation speed multiplier, clamped to 0.2–2                                                                                               |
-| `glow`            | `0.65`                                  | Halo opacity, clamped to 0–1; zero disables halos                                                                                                   |
-| `breeze`          | `true`                                  | Occasional gentle wind, independent of lighting mode                                                                                                |
-| `wind`            | `1`                                     | Wind strength, clamped to 0–2                                                                                                                       |
-| `interactive`     | `true`                                  | Mouse, pen, and touch grabs on bulbs and wires                                                                                                      |
-| `seed`            | `7`                                     | Finite number for repeatable geometry, twinkle timing, and pattern shuffle                                                                          |
-| `paused`          | `false`                                 | Freeze lighting, wind, rope motion, and the pattern clock                                                                                           |
+| Option            | Default                              | Values                                                                                                                                              |
+| ----------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout`          | `roofline`                           | `roofline`, `curtain`, `draped`, `border`                                                                                                           |
+| `shape`           | `rice`                               | `rice`, `round`, `crystal`, `flower`, `led`, or a nonempty array of these shapes                                                                    |
+| `colors`          | `multicolor`                         | `multicolor` (includes white), `electric` (photo-inspired red/green/blue/yellow/cool white), `white`, `warm`, `tricolor`, or an array of hex colors |
+| `mode`            | `fade`                               | `static`, `blink`, `chase`, `wave`, `alternate`, `pairs`, `double`, `steps`, `bounce`, `fade`; used with a fixed pattern                            |
+| `animated`        | `true`                               | Light animation switch; false keeps steady bulbs and preserves the chosen pattern                                                                   |
+| `pagePosition`    | `fixed`                              | Body/document overlays: `fixed` stays on screen; `absolute` scrolls with the document                                                               |
+| `patternOrder`    | `fixed`                              | `fixed`, `cycle`, `random`                                                                                                                          |
+| `patternInterval` | `10`                                 | Seconds between pattern changes, clamped to 1–3600                                                                                                  |
+| `patternSequence` | `['blink', 'chase', 'wave', 'fade']` | A nonempty array of distinct valid pattern names; can include `static`                                                                              |
+| `dimBase`         | `false`                              | Darken idle glass and deepen animation dim phases                                                                                                   |
+| `glitter`         | `false`                              | Flecks inside the glass and occasional star glints                                                                                                  |
+| `spacing`         | `28`                                 | Requested attachment spacing in CSS pixels, clamped to 16–100                                                                                       |
+| `size`            | `1`                                  | Bulb scale, clamped to 0.5–2.5                                                                                                                      |
+| `sag`             | `48`                                 | Swag depth in CSS pixels, clamped to 0–140 and fitted to target height                                                                              |
+| `speed`           | `1`                                  | Lighting-animation speed multiplier, clamped to 0.2–2                                                                                               |
+| `glow`            | `0.65`                               | Halo opacity, clamped to 0–1; zero disables halos                                                                                                   |
+| `breeze`          | `true`                               | Occasional gentle wind, independent of lighting mode                                                                                                |
+| `wind`            | `1`                                  | Wind strength, clamped to 0–2                                                                                                                       |
+| `interactive`     | `true`                               | Mouse, pen, and touch grabs on bulbs and wires                                                                                                      |
+| `seed`            | `7`                                  | Finite number for repeatable geometry and pattern shuffle                                                                                           |
+| `paused`          | `false`                              | Freeze lighting, wind, rope motion, and the pattern clock                                                                                           |
 
 Color arrays accept `#RGB` and `#RRGGBB`. Shape arrays repeat in their supplied order; repeated entries can weight a mix. Shapes that cannot fit at an attachment are retried at the next available position rather than silently disappearing from the mix. All shapes retain their individual glass artwork. Clearance accounts for shape, socket, mounting angle, and size. Soft halos can blend. Dense strings and intersections can have gaps; at most 600 bulbs are generated per instance.
 
@@ -140,7 +140,7 @@ A scheduled switch replaces only lighting animations. It keeps the SVG geometry,
 lights.update({
   patternOrder: 'cycle',
   patternInterval: 5,
-  patternSequence: ['wave', 'chase', 'twinkle'],
+  patternSequence: ['wave', 'chase', 'fade'],
 });
 
 lights.element.addEventListener('stringpatternchange', (event) => {

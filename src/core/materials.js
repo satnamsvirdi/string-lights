@@ -3,11 +3,14 @@ const BULB_OUTLINES = {
   rice: 'M0 3C-5 3-4.4 13.2 0 18C4.4 13.2 5 3 0 3Z',
   round: 'M0 3a6.4 6.4 0 1 0 0 12.8a6.4 6.4 0 1 0 0-12.8Z',
   led: 'M-3.6 15V7a3.6 3.6 0 0 1 7.2 0v8Z',
+  heart: 'M0 6C-3-1-11 2-9 9C-8 13-3 17 0 20C3 17 8 13 9 9C11 2 3-1 0 6Z',
   crystal: 'M0 3 5.7 8.5 4 14 0 19 -4 14 -5.7 8.5Z',
   flower: 'M0 5C-7-6-12 4-5 8C-17 9-10 19-3 13C-2 24 7 22 5 13C16 18 17 7 7 7C14-2 2-6 0 5Z',
 };
 const FLOWER_PETAL =
   'M0 10.7C-1.4 9.4-4.2 7-3.6 4.9C-2.9 1.5 2.9 1.5 3.6 4.9C4.2 7 1.4 9.4 0 10.7Z';
+const HEART_FILAMENT =
+  'M-.9 5.5V9.2C-4.5 5.5-7.4 9.3-4.5 12.2L0 16.5L4.5 12.2C7.4 9.3 4.5 5.5 .9 9.2V5.5';
 export function materialDefinitions(doc, defs, id, colors, shape) {
   const shapes = Array.isArray(shape) ? shape : [shape];
   const gradient = (type, name, attributes, stops) => {
@@ -116,7 +119,7 @@ export function bulbArtwork(doc, parent, id, index, options) {
     doc,
     'path',
     {
-      d: 'M-1.1 5.2V11Q0 13 1.1 11V5.2',
+      d: options.shape === 'heart' ? HEART_FILAMENT : 'M-1.1 5.2V11Q0 13 1.1 11V5.2',
       fill: 'none',
       stroke: color,
       'stroke-width': 1.5,
@@ -128,7 +131,7 @@ export function bulbArtwork(doc, parent, id, index, options) {
     doc,
     'path',
     {
-      d: 'M-0.7 5.5V11Q0 12.2 0.7 11V5.5',
+      d: options.shape === 'heart' ? HEART_FILAMENT : 'M-0.7 5.5V11Q0 12.2 0.7 11V5.5',
       fill: 'none',
       stroke: '#fffbe8',
       'stroke-width': 0.5,
@@ -174,7 +177,10 @@ export function bulbArtwork(doc, parent, id, index, options) {
       doc,
       'path',
       {
-        d: 'M-1.6 4.5Q-3.2 8-1.5 12',
+        d:
+          options.shape === 'heart'
+            ? 'M-6.8 5.2C-8 7.8-6 10.9-3.8 13.5'
+            : 'M-1.6 4.5Q-3.2 8-1.5 12',
         fill: 'none',
         stroke: '#fff',
         'stroke-opacity': 0.75,

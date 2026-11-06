@@ -8,12 +8,13 @@ import {
   type StringOptions,
 } from 'string-lights';
 const options: StringOptions = {
-  shape: ['rice', 'flower'],
+  shape: ['rice', 'flower', 'heart'],
   colors: 'white',
   pagePosition: 'absolute',
   animated: true,
   patternOrder: 'cycle',
-  patternSequence: ['blink', 'wave'],
+  mode: 'alternate',
+  patternSequence: ['blink', 'wave', 'pairs', 'double', 'steps', 'bounce', 'fade'],
 };
 createGeometry(600, 300, options);
 const lights = createStringLights(document.body, options);
