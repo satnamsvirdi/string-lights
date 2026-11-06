@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/satnamsvirdi/string-lights/compare/v0.3.1...v0.3.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove twinkle and use fade as the default. Replace twinkle in mode and patternSequence with fade.
+
+### Features
+
+* add light controls and fix rope release physics ([ab44e91](https://github.com/satnamsvirdi/string-lights/commit/ab44e915d65ebad6a2119a38f8bfb7b84df6476b))
+* customize the number of string attachment points ([372cbbf](https://github.com/satnamsvirdi/string-lights/commit/372cbbf12ebce6bfb0dbe3dbe7534e8fef18016f))
+* release heart bulbs and natural light rhythms ([b86d17a](https://github.com/satnamsvirdi/string-lights/commit/b86d17a5fcf2101e750282228365481a251503fd))
+
+
+### Bug Fixes
+
+* cover scrollable container content with lights ([5482bdf](https://github.com/satnamsvirdi/string-lights/commit/5482bdfbde87d0f7eeb8c665d9aa29fe50713c3d))
+* damp attached drops only while their header is held ([5c72846](https://github.com/satnamsvirdi/string-lights/commit/5c728462cd3f0977a0427a2c29b401f94ab9048e))
+* keep curtain drops attached to moving headers ([f644754](https://github.com/satnamsvirdi/string-lights/commit/f644754dcc3412515440fdc360783124e6cd0fa1))
+* remove pointer lag when reversing a held string ([4d6feac](https://github.com/satnamsvirdi/string-lights/commit/4d6feac74d81c4b38304a474d1030e9f731711a6))
+* stabilize dragging and restore full-width scrolling lights ([c915f35](https://github.com/satnamsvirdi/string-lights/commit/c915f350b04d54c8500c03a8a0aafc71a5d75a5a))
+
 ## 0.3.1 (2026-11-06)
 
 - Correct the npm package READMEs to document heart bulbs, the new rhythm names, and Fade as the default.

@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/satnamsvirdi/string-lights/issues"
   },
-  "version": "0.3.1",
+  "version": "0.3.0",
   "description": "SSR-safe React component for festival, Christmas, and Diwali string lights.",
   "type": "module",
   "sideEffects": false,
@@ -34,7 +34,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "string-lights": "^0.3.1"
+    "string-lights": "^0.3.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
