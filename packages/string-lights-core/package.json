@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/satnamsvirdi/string-lights/issues"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Tree-shakable festival, Christmas, and Diwali string lights with interactive rope physics.",
   "type": "module",
   "sideEffects": false,

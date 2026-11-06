@@ -21,4 +21,6 @@ The wrapper uses relative positioning for normal/static flow so lights stay insi
 
 Offscreen, hidden-tab, reduced-motion, and pause behavior comes from the core renderer. Licensed under MIT; the license is included in the package.
 
-Lights subtly twinkle by default. Settings and click handlers can control `options.animated` through React state; `false` displays steady bulbs without losing the selected pattern. For a document decoration that scrolls with the page, use `<StringLights fullPage options={{ pagePosition: 'absolute', animated }} />`. The default page position is fixed.
+Lights gently fade by default. Settings and click handlers can control `options.animated` through React state; `false` displays steady bulbs without losing the selected pattern. For a document decoration that scrolls with the page, use `<StringLights fullPage options={{ pagePosition: 'absolute', animated }} />`. The default page position is fixed.
+
+Use `options.shape: "heart"` for heart bulbs. Rhythm names are `alternate`, `pairs`, `double`, `steps`, `bounce` and `fade`; `static`, `blink`, `chase` and `wave` remain available. `twinkle` was removed in 0.3.0; replace it with `fade` in `mode` and `patternSequence`.

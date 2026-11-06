@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-11-06)
+
+- Correct the npm package READMEs to document heart bulbs, the new rhythm names, and Fade as the default.
+- Document replacing the removed Twinkle mode in both `mode` and `patternSequence`.
+- No runtime code changes from 0.3.0.
+
 ## 0.3.0 (2026-11-06)
 
 ### Breaking change
